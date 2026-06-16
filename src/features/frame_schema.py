@@ -17,3 +17,4 @@ class FrameFeature:
     head_yaw: float = 0
     gaze_x: float = 0
     gaze_y: float = 0
+    raw_landmarks: list = None
