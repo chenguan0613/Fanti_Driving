@@ -15,7 +15,7 @@
 
    ```bash
    source .venv/bin/activate # Linux
-   ./.venv/bin/Activate.ps1 # Windows
+   .\.venv\bin\Activate.ps1 # Windows
    ```
 
 3. Install dependencies:

@@ -12,4 +12,8 @@ class FrameFeature:
     gaze_x: float = 0.0
     gaze_y: float = 0.0
     eye_closed: int = 0
-    raw_landmarks: list = None
+    mounth_open_ratio: float = 0
+    head_pitch: float = 0
+    head_yaw: float = 0
+    gaze_x: float = 0
+    gaze_y: float = 0
