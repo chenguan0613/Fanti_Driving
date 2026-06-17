@@ -14,3 +14,16 @@ class FrameFeature:
     mouth_open_ratio: float = 0.0
     raw_landmarks: list | None = None
     right_EAR: float = 0.0
+
+
+@dataclass
+class WindowFeature:
+    face_missing_ratio: float
+    perclos: float
+    ear_mean: float
+    ear_std: float
+    mar_mean: float
+    mar_max: float
+    pitch_mean: float
+    pitch_std: float
+    yaw_std: float
