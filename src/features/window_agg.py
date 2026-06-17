@@ -5,9 +5,25 @@ from src.features.frame_schema import FrameFeature, WindowFeature
 
 class WindowAggregator:
     @staticmethod
-    def aggregate(frames: List[FrameFeature]) -> WindowFeature | dict:
+    def aggregate(frames: List[FrameFeature]) -> WindowFeature:
         if not frames:
-            return {}
+            return WindowFeature(
+                face_missing_ratio=1.0,
+                perclos=0.0,
+                ear_mean=0.0,
+                ear_std=0.0,
+                mar_mean=0.0,
+                mar_max=0.0,
+                pitch_mean=0.0,
+                pitch_std=0.0,
+                yaw_std=0.0,
+                ear_min=0.0,
+                mar_std=0.0,
+                yaw_mean=0.0,
+                gaze_x_mean=0.0,
+                gaze_y_mean=0.0,
+            )
+
         total_frames = len(frames)
         valid_frames = [f for f in frames if f.face_detected == 1]
         if not valid_frames:
