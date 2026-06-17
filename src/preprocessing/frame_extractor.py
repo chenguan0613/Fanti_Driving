@@ -86,20 +86,31 @@ class FrameExtractor:
         matrix = result.facial_transformation_matrixes[0]
         rotation_matrix = matrix[:3, :3]
         angles, _, _, _, _, _ = cv2.RQDecomp3x3(rotation_matrix)
-        pitch = angles[0] * 360 
-        yaw = angles[1] * 360
-        roll = angles[2] * 360
-        return pitch, yaw, roll
+        pitch, yaw, roll = angles
+        return float(pitch), float(yaw), float(roll)
 
     def _compute_gaze(self, lm: list) -> tuple[float, float]:
-        try:
-            left_iris = self._get_point(lm, 473)
-            right_iris = self._get_point(lm, 468)
-            gaze_x = float((left_iris[0] + right_iris[0]) / 2.0)
-            gaze_y = float((left_iris[1] + right_iris[1]) / 2.0)
-            return gaze_x, gaze_y
-        except IndexError:
-            return 0.0, 0.0
+        LEFT_IRIS = [468, 469, 470, 471, 472]
+        RIGHT_IRIS = [473, 474, 475, 476, 477]
+
+        LEFT_EYE_CENTER = (33, 133)
+        RIGHT_EYE_CENTER = (362, 263)
+
+        def center(i1, i2):
+            return (self._get_point(lm, i1) + self._get_point(lm, i2)) / 2.0
+
+        left_center = center(*LEFT_EYE_CENTER)
+        right_center = center(*RIGHT_EYE_CENTER)
+
+        left_iris = np.mean([self._get_point(lm, i) for i in LEFT_IRIS], axis=0)
+        right_iris = np.mean([self._get_point(lm, i) for i in RIGHT_IRIS], axis=0)
+
+        gaze = (left_iris + right_iris) / 2.0
+        eye_center = (left_center + right_center) / 2.0
+
+        gaze_vec = gaze - eye_center
+
+        return float(gaze_vec[0]), float(gaze_vec[1])
 
     def _to_mp_image(self, frame):
         rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
