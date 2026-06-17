@@ -143,7 +143,10 @@ class FrameExtractor:
         gaze_y: float,
         landmarks: list,
     ) -> FrameFeature:
-        eye_closed = 1 if ear < 0.2 else 0
+        ear = min(ear, 0.6)
+        left_ear = min(left_ear, 0.6)
+        right_ear = min(right_ear, 0.6)
+        eye_closed = 1 if ear < 0.18 else 0
         return FrameFeature(
             timestamp=timestamp,
             face_detected=1,

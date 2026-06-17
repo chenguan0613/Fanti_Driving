@@ -5,7 +5,7 @@ from src.features.frame_schema import FrameFeature, WindowFeature
 
 class WindowAggregator:
     @staticmethod
-    def aggregate(frames: List[FrameFeature]) -> dict:
+    def aggregate(frames: List[FrameFeature]) -> WindowFeature | dict:
         if not frames:
             return {}
         total_frames = len(frames)
@@ -21,6 +21,11 @@ class WindowAggregator:
                 pitch_mean=0.0,
                 pitch_std=0.0,
                 yaw_std=0.0,
+                ear_min=0.0,
+                mar_std=0.0,
+                yaw_mean=0.0,
+                gaze_x_mean=0.0,
+                gaze_y_mean=0.0,
             )
 
         face_missing_ratio = 1.0 - (len(valid_frames) / total_frames)
@@ -30,6 +35,8 @@ class WindowAggregator:
         mars = [f.mouth_open_ratio for f in valid_frames]
         pitches = [f.head_pitch for f in valid_frames]
         yaws = [f.head_yaw for f in valid_frames]
+        gaze_xs = [f.gaze_x for f in valid_frames]
+        gaze_ys = [f.gaze_y for f in valid_frames]
 
         # calculate PERCLOS
         closed_frames_count = sum([f.eye_closed for f in valid_frames])
@@ -40,9 +47,14 @@ class WindowAggregator:
             perclos=perclos,
             ear_mean=float(np.mean(ears)),
             ear_std=float(np.std(ears)),
+            ear_min=float(np.min(ears)),
             mar_mean=float(np.mean(mars)),
+            mar_std=float(np.std(mars)),
             mar_max=float(np.max(mars)),
             pitch_mean=float(np.mean(pitches)),
             pitch_std=float(np.std(pitches)),
+            yaw_mean=float(np.mean(yaws)),
             yaw_std=float(np.std(yaws)),
+            gaze_x_mean=float(np.mean(gaze_xs)),
+            gaze_y_mean=float(np.mean(gaze_ys)),
         )

@@ -22,8 +22,13 @@ class WindowFeature:
     perclos: float
     ear_mean: float
     ear_std: float
+    ear_min: float
     mar_mean: float
+    mar_std: float
     mar_max: float
     pitch_mean: float
     pitch_std: float
+    yaw_mean: float
     yaw_std: float
+    gaze_x_mean: float
+    gaze_y_mean: float
