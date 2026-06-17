@@ -21,6 +21,13 @@ class FrameExtractor:
         )
         self.detector = vision.FaceLandmarker.create_from_options(options)
 
+    def close(self):
+        """
+        `close()` should be called after `extrac()`.
+        """
+        if self.detector:
+            self.detector.close()
+
     def extract(self, frame, timestamp=0) -> FrameFeature:
         mp_image = self._to_mp_image(frame)
         result = self._detect(mp_image)
