@@ -1,4 +1,6 @@
 import cv2
+
+
 class VideoLoader:
     """
     Read a video under `video_path`, and divide it into frames,
@@ -15,8 +17,8 @@ class VideoLoader:
 
         if self.frame_interval <= 0:
             self.frame_interval = 1
-        
-        self.frame_interval=max(1,int(self.source_fps/target_fps))
+
+        self.frame_interval = max(1, int(self.source_fps / target_fps))
 
     def frame(self):
         frame_id = 0
@@ -27,9 +29,9 @@ class VideoLoader:
                 break
 
             if frame_id % self.frame_interval == 0:
-                timestamp_sec=self.cap.get(cv2.CAP_PROP_POS_MSEC)/1000.0
-                yield frame_id,timestamp_sec,frame
+                timestamp_sec = self.cap.get(cv2.CAP_PROP_POS_MSEC) / 1000.0
+                yield frame_id, timestamp_sec, frame
 
-            frame_id+=1
+            frame_id += 1
 
         self.cap.release()
