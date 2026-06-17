@@ -48,11 +48,15 @@ def process_video(row, window_stride=15):
     return all_features
 
 
-def _save(df: pd.DataFrame, path: Path):
+def _append_video(features: list[dict], path: Path):
+    if not features:
+        return
+    df = pd.DataFrame(features)
     id_cols = ["video_id", "subject_id", "label"]
     cols = [c for c in df.columns if c not in id_cols] + id_cols
     df = df[cols]
-    df.to_csv(path, index=False)
+    write_header = not path.exists()
+    df.to_csv(path, mode="a", index=False, header=write_header)
 
 
 def main():
@@ -100,15 +104,10 @@ def main():
     workers = args.workers if args.workers is not None else max(1, total_cores // parts)
     print(f"Using {workers} worker processes")
 
-    all_features = []
-
     with Pool(processes=workers) as pool:
         worker = partial(process_video, window_stride=args.window_stride)
         for features in pool.imap_unordered(worker, rows):
-            all_features.extend(features)
-
-    if all_features:
-        _save(pd.DataFrame(all_features), output_features_path)
+            _append_video(features, output_features_path)
 
 
 if __name__ == "__main__":
