@@ -82,9 +82,9 @@ class Train:
 
     def _random_forest(self) -> RandomForestClassifier:
         return RandomForestClassifier(
-            n_estimators=200,
-            max_depth=15,
-            min_samples_leaf=5,
+            n_estimators=800,
+            max_depth=25,
+            min_samples_leaf=2,
             class_weight="balanced",
             random_state=42,
             n_jobs=-1,
