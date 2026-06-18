@@ -116,7 +116,8 @@ class Train:
 
 
 def main():
-    path = "./src/dataset/training_features.csv"
+    # path = "./src/dataset/training_features.csv"
+    path = "./src/dataset/training_features_enhanced.csv"
     # path = "./data/training_features.csv"
     t = Train(path)
     t.train_and_eval()
