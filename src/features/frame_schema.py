@@ -20,6 +20,7 @@ class FrameFeature:
 class WindowFeature:
     face_missing_ratio: float
     perclos: float
+    blink_rate: float
     ear_mean: float
     ear_std: float
     ear_min: float

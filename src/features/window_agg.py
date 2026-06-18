@@ -10,16 +10,17 @@ class WindowAggregator:
             return WindowFeature(
                 face_missing_ratio=1.0,
                 perclos=0.0,
+                blink_rate=0.0,
                 ear_mean=0.0,
                 ear_std=0.0,
+                ear_min=0.0,
                 mar_mean=0.0,
+                mar_std=0.0,
                 mar_max=0.0,
                 pitch_mean=0.0,
                 pitch_std=0.0,
-                yaw_std=0.0,
-                ear_min=0.0,
-                mar_std=0.0,
                 yaw_mean=0.0,
+                yaw_std=0.0,
                 gaze_x_mean=0.0,
                 gaze_y_mean=0.0,
             )
@@ -30,16 +31,17 @@ class WindowAggregator:
             return WindowFeature(
                 face_missing_ratio=1.0,
                 perclos=0.0,
+                blink_rate=0.0,
                 ear_mean=0.0,
                 ear_std=0.0,
+                ear_min=0.0,
                 mar_mean=0.0,
+                mar_std=0.0,
                 mar_max=0.0,
                 pitch_mean=0.0,
                 pitch_std=0.0,
-                yaw_std=0.0,
-                ear_min=0.0,
-                mar_std=0.0,
                 yaw_mean=0.0,
+                yaw_std=0.0,
                 gaze_x_mean=0.0,
                 gaze_y_mean=0.0,
             )
@@ -58,9 +60,19 @@ class WindowAggregator:
         closed_frames_count = sum([f.eye_closed for f in valid_frames])
         perclos = closed_frames_count / len(valid_frames)
 
+        # calculate blink rate (0→1 transitions per second)
+        blink_count = sum(
+            1
+            for i in range(1, len(valid_frames))
+            if valid_frames[i - 1].eye_closed == 0 and valid_frames[i].eye_closed == 1
+        )
+        window_duration = valid_frames[-1].timestamp - valid_frames[0].timestamp
+        blink_rate = blink_count / window_duration if window_duration > 0 else 0.0
+
         return WindowFeature(
             face_missing_ratio=face_missing_ratio,
             perclos=perclos,
+            blink_rate=blink_rate,
             ear_mean=float(np.mean(ears)),
             ear_std=float(np.std(ears)),
             ear_min=float(np.min(ears)),
