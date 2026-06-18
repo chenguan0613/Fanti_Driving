@@ -98,7 +98,7 @@ class Train:
 
     def _decision_tree(self) -> DecisionTreeClassifier:
         return DecisionTreeClassifier(
-            max_depth=8,
+            max_depth=20,
             min_samples_leaf=10,
             class_weight="balanced",
             random_state=42,
