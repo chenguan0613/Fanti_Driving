@@ -22,8 +22,8 @@ class Train:
                 "video_id",
                 "subject_id",
                 "label",
-                # "yaw_mean",
-                # "pitch_mean",
+                "yaw_mean",
+                "pitch_mean",
             )
             and self.df[c].dtype in ("float64", "float32", "int64", "int32")
         ]
