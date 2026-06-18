@@ -24,6 +24,8 @@ class Train:
                 "label",
                 "yaw_mean",
                 "pitch_mean",
+                "gaze_x_mean",
+                "gaze_y_mean",
             )
             and self.df[c].dtype in ("float64", "float32", "int64", "int32")
         ]
