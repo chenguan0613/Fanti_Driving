@@ -13,7 +13,7 @@ def enhance_features(input_path: str, output_path: str):
         )
 
     # 需要被归一化的绝对特征列表
-    features_to_norm = ["ear_mean", "mar_max", "pitch_std", "yaw_std"]
+    features_to_norm = ["ear_mean", "mar_max", "pitch_std", "yaw_std", "blink_rate"]
 
     print("[INFO] 正在提取受试者的绝对清醒基线 (label=0)...")
 
