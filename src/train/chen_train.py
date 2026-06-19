@@ -66,17 +66,25 @@ class Train:
             ("Logistic Regression", self._logistic_regression()),
         ]
 
+        best_score = -1
+        best_model = None
+        best_name = ""
+
         for name, model in models:
             print(f"--- {name} ---")
             y_pred = self._train(model)
+            score = f1_score(self.y_test, y_pred, average="macro")
             self._eval(y_pred)
+            if score > best_score:
+                best_score = score
+                best_model = model
+                best_name = name
             print()
         os.makedirs("models", exist_ok=True)
-        best_model = models[0][1]
         save_path = "models/fatigue_model.pkl"
         model_data = {"model": best_model, "feature_names": self.features_names}
         joblib.dump(model_data, save_path)
-        print(f"[SUCCESS] 最佳模型及特征对照表已成功序列化并保存至: {save_path}")
+        print(f"\nBest model: {best_name} saved to {save_path}")
 
     def _train(self, model):
         model.fit(self.X_train, self.y_train)
