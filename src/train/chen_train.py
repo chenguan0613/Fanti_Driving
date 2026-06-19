@@ -116,7 +116,12 @@ class Train:
     def _svm(self) -> Pipeline:
         return make_pipeline(
             StandardScaler(),
-            SVC(kernel="rbf", C=1.0, gamma="scale", class_weight="balanced"),
+            SVC(
+                kernel="rbf",
+                C=1.0,
+                gamma="scale",
+                class_weight="balanced",
+            ),
         )
 
     def _decision_tree(self) -> DecisionTreeClassifier:
@@ -128,6 +133,11 @@ class Train:
         )
 
     def _logistic_regression(self) -> Pipeline:
+        return LogisticRegression(
+            max_iter=1000,
+            class_weight="balanced",
+            random_state=42,
+        )
         return make_pipeline(
             StandardScaler(),
             LogisticRegression(
