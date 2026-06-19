@@ -138,7 +138,7 @@ class FatiguePredictor:
             if not self.is_baseline_ready:
                 self.baseline_history.append(stats_dict)
                 self.current_status = "Calibrating"
-                if len(self.baseline_history) >= 10:
+                if len(self.baseline_history) >= 30:
                     df_base = pd.DataFrame(self.baseline_history)
                     for feat in ["ear_mean", "mar_max", "pitch_std", "yaw_std"]:
                         self.baseline_stats[feat] = df_base[feat].mean()
