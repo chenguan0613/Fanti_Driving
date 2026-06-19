@@ -20,7 +20,7 @@ def process_video(row, window_stride=15):
 
     extractor = FrameExtractor("./face_landmarker.task")
     loader = VideoLoader(video_path, target_fps=30)
-    window_buffer = SlidingWindowBuffer(window_size=90)
+    window_buffer = SlidingWindowBuffer(window_size=150)
 
     all_features = []
     frame_counter = 0
