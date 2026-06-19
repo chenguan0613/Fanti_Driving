@@ -132,8 +132,13 @@ class FatiguePredictor:
             }
             df_input = pd.DataFrame([final_input])
 
-            probabilities = self.model.predict_proba(df_input)[0]
-            self.fatigue_prob = round(probabilities[1] * 100, 1)
+            if hasattr(self.model, "predict_proba"):
+                probabilities = self.model.predict_proba(df_input)[0]
+                self.fatigue_prob = round(probabilities[1] * 100, 1)
+            else:
+                decision = self.model.decision_function(df_input)[0]
+                prob = 1.0 / (1.0 + np.exp(-decision))
+                self.fatigue_prob = round(prob * 100, 1)
 
             if self.fatigue_prob > 50.0:
                 self.current_status = "FATIGUE WARNING"
