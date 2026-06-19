@@ -1,5 +1,6 @@
 import cv2
 import time
+import numpy as np
 import joblib
 import traceback
 import pandas as pd
@@ -16,7 +17,7 @@ class FatiguePredictor:
         print("[INFO] 正在唤醒 FANTI_DRIVING AI 核心...")
 
         # ==========================================
-        # 1. 终极自适应模型加载引擎 (兼容裸模型与字典包)
+        # 1. 加载模型和特征名单
         # ==========================================
         loaded_obj = joblib.load(model_path)
         if isinstance(loaded_obj, dict) and "model" in loaded_obj:
@@ -24,61 +25,16 @@ class FatiguePredictor:
         else:
             self.model = loaded_obj
 
-        # 探测模型究竟需要多少个特征维度 (默认 21)
-        self.expected_n_features = getattr(self.model, "n_features_in_", 21)
-
-        # ==========================================
-        # 2. 智能特征名单解析与清洗
-        # ==========================================
-        self.active_features = []
-
-        if hasattr(self.model, "feature_names_in_"):
-            # 优先级 A：从 sklearn 模型内部记忆中读取
+        if isinstance(loaded_obj, dict) and "feature_names" in loaded_obj:
+            self.active_features = list(loaded_obj["feature_names"])
+            print(f"[INFO] 从模型字典读取特征名单 ({len(self.active_features)} 维)。")
+        elif hasattr(self.model, "feature_names_in_"):
             self.active_features = list(self.model.feature_names_in_)
-            print("[INFO] 成功从模型内部读取特征记忆。")
-
-        elif isinstance(loaded_obj, dict) and "feature_names" in loaded_obj:
-            # 优先级 B：读取包裹说明书，并剔除当时不小心混入的非特征列
-            raw_names = loaded_obj["feature_names"]
-            invalid_cols = {
-                "label",
-                "timestamp",
-                "participant_id",
-                "state",
-                "face_missing_ratio",
-            }
-            self.active_features = [f for f in raw_names if f not in invalid_cols]
-            print("[INFO] 成功从字典包裹中提取并清洗特征名单。")
-
-        # 终极兜底：如果上面都失败，强制挂载黄金 21 维特征序列
-        if len(self.active_features) != self.expected_n_features:
-            print(
-                f"[WARNING] 无法获取安全特征名单！将强制启动 {self.expected_n_features} 维默认特征映射。"
+            print(f"[INFO] 从模型内部读取特征名单 ({len(self.active_features)} 维)。")
+        else:
+            raise ValueError(
+                "无法获取特征名单，请确保模型是通过 chen_train.py 保存的。"
             )
-            default_features = [
-                "perclos",
-                "blink_rate",
-                "ear_mean",
-                "ear_std",
-                "ear_min",
-                "mar_mean",
-                "mar_std",
-                "mar_max",
-                "pitch_mean",
-                "pitch_std",
-                "yaw_mean",
-                "yaw_std",
-                "gaze_x_mean",
-                "gaze_y_mean",
-                "ear_mean_norm",
-                "mar_max_norm",
-                "pitch_std_norm",
-                "yaw_std_norm",
-                "ear_velocity",
-                "pitch_velocity",
-                "fatigue_index",
-            ]
-            self.active_features = default_features[: self.expected_n_features]
 
         # ==========================================
         # 3. 基础组件与状态变量初始化
