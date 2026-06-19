@@ -1,5 +1,5 @@
 from sklearn.model_selection import GroupShuffleSplit
-from sklearn.metrics import classification_report
+from sklearn.metrics import classification_report, f1_score
 from sklearn.linear_model import LogisticRegression
 from sklearn.preprocessing import StandardScaler
 from sklearn.tree import DecisionTreeClassifier
@@ -25,7 +25,14 @@ class Train:
                 "subject_id",
                 "label",
                 "yaw_mean",
+                "yaw_std",
+                "yaw_std_norm",
+                # TODO: Check the effect of `pitch_mean`.
                 "pitch_mean",
+                "gaze_x_mean",
+                "gaze_y_mean",
+                "blink_rate",
+                "blink_rate_norm",
             )
             and self.df[c].dtype in ("float64", "float32", "int64", "int32")
         ]
