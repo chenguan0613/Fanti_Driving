@@ -140,7 +140,7 @@ class FatiguePredictor:
                 prob = 1.0 / (1.0 + np.exp(-decision))
                 self.fatigue_prob = round(prob * 100, 1)
 
-            if self.fatigue_prob > 50.0:
+            if self.fatigue_prob > 70.0:
                 self.current_status = "FATIGUE WARNING"
             else:
                 self.current_status = "Safe"
