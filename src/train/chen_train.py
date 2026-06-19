@@ -37,7 +37,7 @@ class Train:
             and self.df[c].dtype in ("float64", "float32", "int64", "int32")
         ]
 
-        self.features_names = self.df.drop(columns=["label"]).columns
+        self.features_names = list(feature_cols)
         X = self.df[feature_cols].values
         y = self.df["label"].values
         groups = self.df["subject_id"].values
