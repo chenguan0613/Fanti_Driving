@@ -11,8 +11,12 @@ from src.features.window_agg import WindowAggregator
 
 
 class FatiguePredictor:
+
     def __init__(
-        self, model_path="models/fatigue_model.pkl", task_path="face_landmarker.task"
+        # self, model_path="models/fatigue_model.pkl", task_path="face_landmarker.task"
+        self,
+        model_path="models/heuristic_model.pkl",
+        task_path="face_landmarker.task",
     ):
         print("[INFO] 正在唤醒 FANTI_DRIVING AI 核心...")
 
