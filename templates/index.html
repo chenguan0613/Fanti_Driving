@@ -122,6 +122,10 @@
 
     <div class="dashboard">
     <title>FANTI_DRIVING Monitoring Dashboard</title>
+    <script
+      defer
+      src="{{ url_for('static', filename='js/dashboard.js') }}"
+    ></script>
   <body>
     <div class="page-shell">
       <h1>FANTI_DRIVING</h1>
@@ -179,44 +183,5 @@
         </section>
       </div>
     </div>
-
-    <script>
-        // 定义一个异步函数来获取状态
-        async function fetchSystemStatus() {
-            try {
-                // 向我们的 Flask /api/status 接口发起请求
-                const response = await fetch('/api/status');
-                const data = await response.json();
-
-                // 1. 获取对应的 DOM 元素
-                const statusEl = document.getElementById('status-text');
-                const probEl = document.getElementById('prob-text');
-                const perclosEl = document.getElementById('perclos-text');
-
-                // 2. 将后端传来的数据渲染到网页文字上
-                statusEl.innerText = data.status;
-                probEl.innerText = data.fatigue_prob + '%';
-                perclosEl.innerText = data.perclos;
-
-                // 3. 智能变色逻辑：根据不同状态赋予不同的 CSS 类名
-                statusEl.className = 'stat-value'; // 先清空原有颜色类
-                if (data.status === "FATIGUE WARNING") {
-                    statusEl.classList.add('status-warning');
-                } else if (data.status === "Safe") {
-                    statusEl.classList.add('status-safe');
-                } else {
-                    statusEl.classList.add('status-neutral'); // Buffering 或是没检测到脸
-                }
-            } catch (error) {
-                console.error("Unable to connect to monitoring core:", error);
-            }
-        }
-
-        setInterval(fetchSystemStatus, 1000);
-
-        // 网页刚加载时，立刻执行一次，避免首秒空白
-        fetchSystemStatus();
-    </script>
-</body>
-
+  </body>
 </html>
