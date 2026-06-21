@@ -76,7 +76,7 @@ class FatiguePredictor:
         else:
             self.current_status = "Buffering"
 
-        annotated_frame = self._draw_hud(frame, feature)
+        annotated_frame = self._draw_hud(frame)
         return annotated_frame, self.current_status, self.fatigue_prob
 
     def _think(self, raw_stats):
@@ -142,7 +142,7 @@ class FatiguePredictor:
             print("--------------------------------------------------\n")
             self.current_status = "Error: Check Terminal"
 
-    def _draw_hud(self, frame, feature):
+    def _draw_hud(self, frame):
         display_frame = frame.copy()
         if self.current_status == "FATIGUE WARNING":
             hud_color = (0, 0, 255)
