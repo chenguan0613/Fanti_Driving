@@ -8,7 +8,6 @@ class FeatureBaseline:
         # Delete sliding windows with a frame drop rate > 50%.
         self.df = self.df[self.df["face_missing_ratio"] < 0.50].reset_index(drop=True)
         self.df.drop(columns=["face_missing_ratio"], inplace=True)
-        print(f"Removed {initial_len - len(self.df)} high-loss rows")
 
     def _smooth_noise(self):
         print("Noise reduction in progress...")
