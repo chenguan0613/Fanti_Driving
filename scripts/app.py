@@ -15,7 +15,7 @@ def generate_frames():
     cap = cv2.VideoCapture(0)
 
     if not cap.isOpened():
-        print("[ERROR] Cannot open the camera！")
+        print("[ERROR] Cannot open the camera.")
         return
 
     while True:
@@ -23,17 +23,17 @@ def generate_frames():
         if not success:
             break
 
-        # 1. 喂给 AI 引擎处理
-        annotated_frame, status, prob = predictor.process_frame(frame)
-
-        # 2. 压缩为 JPEG 字节流
+        annotated_frame, _, _ = predictor.process_frame(frame)
         ret, buffer = cv2.imencode(".jpg", annotated_frame)
-        frame_bytes = buffer.tobytes()
+        if not ret:
+            continue
 
-        # 3. 推送给前端
         yield (
-            b"--frame\r\n" b"Content-Type: image/jpeg\r\n\r\n" + frame_bytes + b"\r\n"
+            b"--frame\r\n"
+            b"Content-Type: image/jpeg\r\n\r\n" + buffer.tobytes() + b"\r\n"
         )
+
+    cap.release()
 
 
 @app.route("/")
