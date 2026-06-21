@@ -1,13 +1,11 @@
 import pandas as pd
-import numpy as np
-from pathlib import Path
 
 
 # eye: perclos, blink_rate, ear_mean, ear_std, ear_min
 # mouth: mar_mean, mar_std, mar_max
 # head: pitch_mean, pitch_std, yaw_mean, yaw_std
 # gaze: gaze_x_mean, gaze_y_mean
-class FeatureEngineer:
+class FeatureBaseline:
     def __init__(self, input_path: str):
         self.df = pd.read_csv(input_path)
         # Delete sliding windows with a frame drop rate > 50%.
@@ -75,10 +73,3 @@ class FeatureEngineer:
         self.df.to_csv(output_path, index=False)
         meta_cols = {"video_id", "subject_id", "label"}
         features = [c for c in self.df.columns if c not in meta_cols]
-
-
-if __name__ == "__main__":
-    INPUT_CSV = "src/dataset/merge_five.csv"
-    OUTPUT_CSV = "src/dataset/merge_five_enhanced_new.csv"
-    pipeline = FeatureEngineer(INPUT_CSV)
-    pipeline.process_and_save(OUTPUT_CSV)
