@@ -5,6 +5,7 @@ from sklearn.model_selection import GroupShuffleSplit
 from sklearn.metrics import f1_score
 import time
 import warnings
+from src.features import META_COLS
 
 warnings.filterwarnings("ignore")
 
@@ -92,8 +93,7 @@ class FeatureSelectionArena:
 
     def fight(self, csv_path: str):
         df = pd.read_csv(csv_path)
-        meta_cols = ["video_id", "subject_id", "label"]
-        feature_names = np.array([c for c in df.columns if c not in meta_cols])
+        feature_names = np.array([c for c in df.columns if c not in META_COLS])
 
         X = df[feature_names].values
         y = df["label"].values

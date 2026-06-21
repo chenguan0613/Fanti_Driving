@@ -5,7 +5,7 @@ from multiprocessing import Pool, cpu_count
 from functools import partial
 from src.preprocessing import VideoLoader, FrameExtractor
 from src.realtime import SlidingWindowBuffer
-from src.features import WindowAggregator
+from src.features import WindowAggregator, FeatureRow, META_COLS
 
 
 def _process_chunk(rows, window_stride, target_fps, window_size, model_path):
@@ -38,11 +38,10 @@ def _process_chunk(rows, window_stride, target_fps, window_size, model_path):
                             )
 
                             if stats and stats.face_missing_ratio < 0.50:
-                                row_data = asdict(stats)
-                                row_data["video_id"] = video_id
-                                row_data["subject_id"] = subject_label
-                                row_data["label"] = state_label
-                                all_features.append(row_data)
+                                row = FeatureRow.from_window(
+                                    stats, video_id, subject_label, state_label
+                                )
+                                all_features.append(row)
                         frame_counter += 1
             except Exception as e:
                 print(f"[ERROR] {video_id}: {e}")
@@ -69,12 +68,12 @@ class FeatureExtractor:
         self.window_size = window_size
         self.model_path = model_path
 
-    def _append_video(self, features: list[dict], path: Path):
+    def _append_video(self, features: list[FeatureRow], path: Path):
         if not features:
             return
-        df = pd.DataFrame(features)
-        id_cols = ["video_id", "subject_id", "label"]
-        cols = [c for c in df.columns if c not in id_cols] + id_cols
+        rows = [asdict(f) for f in features]
+        df = pd.DataFrame(rows)
+        cols = [c for c in df.columns if c not in META_COLS] + list(META_COLS)
         df = df[cols]
         write_header = not path.exists()
         df.to_csv(path, mode="a", index=False, header=write_header)

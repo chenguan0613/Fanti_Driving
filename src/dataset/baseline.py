@@ -1,38 +1,19 @@
 import pandas as pd
+from src.features import SMOOTH_COLS, NORM_COLS
 
 
-# eye: perclos, blink_rate, ear_mean, ear_std, ear_min
-# mouth: mar_mean, mar_std, mar_max
-# head: pitch_mean, pitch_std, yaw_mean, yaw_std
-# gaze: gaze_x_mean, gaze_y_mean
 class FeatureBaseline:
     def __init__(self, input_path: str):
         self.df = pd.read_csv(input_path)
-        # Delete sliding windows with a frame drop rate > 50%.
         initial_len = len(self.df)
         self.df = self.df[self.df["face_missing_ratio"] < 0.50].reset_index(drop=True)
         self.df.drop(columns=["face_missing_ratio"], inplace=True)
+        print(f"Removed {initial_len - len(self.df)} high-loss rows")
 
     def _smooth_noise(self):
         print("Noise reduction in progress...")
-        smooth_cols = [
-            "perclos",
-            "blink_rate",
-            "ear_mean",
-            "ear_std",
-            "ear_min",
-            "mar_mean",
-            "mar_std",
-            "mar_max",
-            "pitch_mean",
-            "pitch_std",
-            "yaw_mean",
-            "yaw_std",
-            "gaze_x_mean",
-            "gaze_y_mean",
-        ]
         self.df = self.df.sort_values(by=["video_id"]).reset_index(drop=True)
-        for col in smooth_cols:
+        for col in SMOOTH_COLS:
             self.df[col] = self.df.groupby("video_id")[col].transform(
                 lambda x: x.rolling(window=5, min_periods=1).mean()
             )
@@ -40,10 +21,8 @@ class FeatureBaseline:
     def _normalize_baseline(self):
         print("Normalizing...")
         awake_df = self.df[self.df["label"] == 0]
-        # Select features need to be eliminate difference
-        norm_cols = ["ear_mean", "mar_max", "pitch_std", "yaw_std"]
-        baseline_table = awake_df.groupby("subject_id")[norm_cols].mean()
-        for col in norm_cols:
+        baseline_table = awake_df.groupby("subject_id")[NORM_COLS].mean()
+        for col in NORM_COLS:
             baseline_series = self.df["subject_id"].map(baseline_table[col])
             if baseline_series.isnull().any():
                 global_mean = self.df.groupby("subject_id")[col].mean()

@@ -10,32 +10,27 @@ import pandas as pd
 import numpy as np
 import os
 import joblib
+from src.features import META_COLS
+
+
+EXCLUDED_COLS = META_COLS + [
+    "yaw_mean",
+    "yaw_std",
+    "yaw_std_norm",
+    # TODO: Check the effect of `pitch_mean`
+    "pitch_mean",
+    "gaze_x_mean",
+    "gaze_y_mean",
+    "blink_rate",
+    "blink_rate_norm",
+]
 
 
 class Train:
     def __init__(self, dataset_path: str) -> None:
         self.df = pd.read_csv(dataset_path)
 
-        feature_cols = [
-            c
-            for c in self.df.columns
-            if c
-            not in (
-                "video_id",
-                "subject_id",
-                "label",
-                "yaw_mean",
-                "yaw_std",
-                "yaw_std_norm",
-                # TODO: Check the effect of `pitch_mean`.
-                "pitch_mean",
-                "gaze_x_mean",
-                "gaze_y_mean",
-                "blink_rate",
-                "blink_rate_norm",
-            )
-            # and self.df[c].dtype in ("float64", "float32", "int64", "int32")
-        ]
+        feature_cols = [c for c in self.df.columns if c not in EXCLUDED_COLS]
 
         self.features_names = list(feature_cols)
         X = self.df[feature_cols].values
