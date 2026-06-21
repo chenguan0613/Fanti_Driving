@@ -1,4 +1,4 @@
-from src.dataset.build_csv import CSVBuilder
+from src.dataset import CSVBuilder
 
 
 def main():
