@@ -2,9 +2,10 @@ import cv2
 from flask import Flask, render_template, Response, jsonify
 from src.realtime import FatiguePredictor
 
-app = Flask(__name__)
-# 全局实例化预测器，避免每次请求重复加载模型
-predictor = FatiguePredictor()
+MODEL_PATH = "./models/fatigue_model.pkl"
+
+app = Flask(__name__, template_folder="../templates")
+predictor = FatiguePredictor(model_path=MODEL_PATH)
 
 
 def generate_frames():
@@ -57,4 +58,10 @@ def get_status():
 
 if __name__ == "__main__":
     print("Open: http://127.0.0.1:5000")
-    app.run(host="0.0.0.0", port=5000, debug=True, threaded=True, use_reloader=False)
+    app.run(
+        host="0.0.0.0",
+        port=5000,
+        debug=True,
+        threaded=True,
+        use_reloader=False,
+    )
