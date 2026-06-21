@@ -1,6 +1,6 @@
 from collections import deque
 from typing import List
-from src.features.frame_schema import FrameFeature
+from src.features import FrameFeature
 
 
 class SlidingWindowBuffer:

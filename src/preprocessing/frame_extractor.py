@@ -3,7 +3,7 @@ import mediapipe as mp
 from mediapipe.tasks import python
 from mediapipe.tasks.python import vision
 import cv2
-from src.features.frame_schema import FrameFeature
+from src.features import FrameFeature
 
 
 class FrameExtractor:
@@ -28,7 +28,7 @@ class FrameExtractor:
         if self.detector:
             self.detector.close()
 
-    def extract(self, frame, timestamp=0) -> FrameFeature:
+    def extract(self, frame, timestamp=0.0) -> FrameFeature:
         mp_image = self._to_mp_image(frame)
         result = self._detect(mp_image)
         if not self._has_face(result):

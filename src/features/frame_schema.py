@@ -33,3 +33,95 @@ class WindowFeature:
     yaw_std: float
     gaze_x_mean: float
     gaze_y_mean: float
+
+
+@dataclass
+class FeatureRow:
+    face_missing_ratio: float = 0.0
+    perclos: float = 0.0
+    blink_rate: float = 0.0
+    ear_mean: float = 0.0
+    ear_std: float = 0.0
+    ear_min: float = 0.0
+    mar_mean: float = 0.0
+    mar_std: float = 0.0
+    mar_max: float = 0.0
+    pitch_mean: float = 0.0
+    pitch_std: float = 0.0
+    yaw_mean: float = 0.0
+    yaw_std: float = 0.0
+    gaze_x_mean: float = 0.0
+    gaze_y_mean: float = 0.0
+
+    video_id: str = ""
+    subject_id: str = ""
+    label: int = -1
+
+    ear_mean_norm: float = 0.0
+    mar_max_norm: float = 0.0
+    pitch_std_norm: float = 0.0
+    yaw_std_norm: float = 0.0
+    ear_velocity: float = 0.0
+    pitch_velocity: float = 0.0
+    fatigue_index: float = 0.0
+
+    @staticmethod
+    def from_window(stats: WindowFeature, video_id="", subject_id="", label=-1):
+        return FeatureRow(
+            face_missing_ratio=stats.face_missing_ratio,
+            perclos=stats.perclos,
+            blink_rate=stats.blink_rate,
+            ear_mean=stats.ear_mean,
+            ear_std=stats.ear_std,
+            ear_min=stats.ear_min,
+            mar_mean=stats.mar_mean,
+            mar_std=stats.mar_std,
+            mar_max=stats.mar_max,
+            pitch_mean=stats.pitch_mean,
+            pitch_std=stats.pitch_std,
+            yaw_mean=stats.yaw_mean,
+            yaw_std=stats.yaw_std,
+            gaze_x_mean=stats.gaze_x_mean,
+            gaze_y_mean=stats.gaze_y_mean,
+            video_id=video_id,
+            subject_id=subject_id,
+            label=label,
+        )
+
+
+SMOOTH_COLS = [
+    "perclos",
+    "blink_rate",
+    "ear_mean",
+    "ear_std",
+    "ear_min",
+    "mar_mean",
+    "mar_std",
+    "mar_max",
+    "pitch_mean",
+    "pitch_std",
+    "yaw_mean",
+    "yaw_std",
+    "gaze_x_mean",
+    "gaze_y_mean",
+]
+NORM_COLS = [
+    "ear_mean",
+    "mar_max",
+    "pitch_std",
+    "yaw_std",
+]
+META_COLS = [
+    "video_id",
+    "subject_id",
+    "label",
+]
+ENHANCED_COLS = [
+    "ear_mean_norm",
+    "mar_max_norm",
+    "pitch_std_norm",
+    "yaw_std_norm",
+    "ear_velocity",
+    "pitch_velocity",
+    "fatigue_index",
+]

@@ -6,9 +6,9 @@ import traceback
 import pandas as pd
 from collections import deque
 from dataclasses import asdict
-from src.preprocessing.frame_extractor import FrameExtractor
-from src.realtime.buffer import SlidingWindowBuffer
-from src.features.window_agg import WindowAggregator
+from src.preprocessing import FrameExtractor
+from .buffer import SlidingWindowBuffer
+from src.features import WindowAggregator, FeatureRow, NORM_COLS
 
 
 class FatiguePredictor:
@@ -80,14 +80,15 @@ class FatiguePredictor:
 
     def _think(self, raw_stats):
         try:
-            # phase 1: Build baseline
-            stats_dict = asdict(raw_stats)
+            row = FeatureRow.from_window(raw_stats)
+
+            # Phase 1: Build baseline
             if not self.is_baseline_ready:
-                self.baseline_history.append(stats_dict)
+                self.baseline_history.append(asdict(row))
                 self.current_status = "Calibrating"
                 if len(self.baseline_history) >= 150:
                     df_base = pd.DataFrame(self.baseline_history)
-                    for feat in ["ear_mean", "mar_max", "pitch_std", "yaw_std"]:
+                    for feat in NORM_COLS:
                         self.baseline_stats[feat] = df_base[feat].mean()
                     self.is_baseline_ready = True
                     print(
@@ -96,38 +97,29 @@ class FatiguePredictor:
                 return
 
             # Phase 2: calculate the enhanced features
-            enhanced_features = stats_dict.copy()
-            # Standarization
             for feat in ["ear_mean", "pitch_std", "yaw_std"]:
                 base_val = self.baseline_stats[feat]
-                curr_val = stats_dict[feat]
-                norm_val = (curr_val - base_val) / (base_val + 1e-6)
-                enhanced_features[f"{feat}_norm"] = norm_val
+                curr_val = getattr(row, feat)
+                setattr(row, f"{feat}_norm", (curr_val - base_val) / (base_val + 1e-6))
 
-            enhanced_features["mar_max_norm"] = (
-                stats_dict["mar_max"] - self.baseline_stats["mar_max"]
-            )
-            # First-order difference velocity calculation
-            curr_ear_norm = enhanced_features["ear_mean_norm"]
-            curr_pitch_norm = enhanced_features["pitch_std_norm"]
+            row.mar_max_norm = row.mar_max - self.baseline_stats["mar_max"]
+
+            curr_ear_norm = row.ear_mean_norm
+            curr_pitch_norm = row.pitch_std_norm
 
             if len(self.norm_history) == 15:
-                old_norms = self.norm_history[0]
-                enhanced_features["ear_velocity"] = curr_ear_norm - old_norms["ear"]
-                enhanced_features["pitch_velocity"] = (
-                    curr_pitch_norm - old_norms["pitch"]
-                )
+                old_ear, old_pitch = self.norm_history[0]
+                row.ear_velocity = curr_ear_norm - old_ear
+                row.pitch_velocity = curr_pitch_norm - old_pitch
             else:
-                enhanced_features["ear_velocity"] = 0.0
-                enhanced_features["pitch_velocity"] = 0.0
+                row.ear_velocity = 0.0
+                row.pitch_velocity = 0.0
 
-            self.norm_history.append({"ear": curr_ear_norm, "pitch": curr_pitch_norm})
-            enhanced_features["fatigue_index"] = self.perclos * abs(curr_ear_norm)
+            self.norm_history.append((curr_ear_norm, curr_pitch_norm))
+            row.fatigue_index = self.perclos * abs(curr_ear_norm)
 
             # Phase 3: AI prediction
-            input_values = [
-                enhanced_features.get(col, 0.0) for col in self.active_features
-            ]
+            input_values = [getattr(row, col, 0.0) for col in self.active_features]
             X_input = np.array([input_values])
 
             if hasattr(self.model, "predict_proba"):
