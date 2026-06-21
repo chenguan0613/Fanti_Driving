@@ -20,6 +20,7 @@
         libxext
         libxkbcommon
         libxrender
+        prettier
         python313
         stdenv.cc.cc.lib
         zlib
