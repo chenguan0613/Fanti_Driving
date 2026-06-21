@@ -9,8 +9,19 @@ from src.features.window_agg import WindowAggregator
 
 
 class FeatureExtractor:
-    def __init__(self, window_stride: int) -> None:
+    """
+    FeatureExtractor extracts raw features from a given dataset.
+    """
+
+    def __init__(
+        self,
+        window_stride: int,
+        target_fps: int,
+        window_size: int,
+    ) -> None:
         self.window_stride = window_stride
+        self.target_fps = target_fps
+        self.window_size = window_size
 
     def process_video(self, row):
         video_id = row["video_id"]
@@ -21,8 +32,8 @@ class FeatureExtractor:
         print(f"[START] {video_id}")
 
         extractor = FrameExtractor("./face_landmarker.task")
-        loader = VideoLoader(video_path, target_fps=30)
-        window_buffer = SlidingWindowBuffer(window_size=150)
+        loader = VideoLoader(video_path, target_fps=self.target_fps)
+        window_buffer = SlidingWindowBuffer(window_size=self.window_size)
 
         all_features = []
         frame_counter = 0

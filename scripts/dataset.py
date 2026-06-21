@@ -9,7 +9,11 @@ def main():
     ENHANCED_FEATURE_PATH = "./enhanced.csv"
     WORKDERS = cpu_count()
 
-    fe = FeatureExtractor(30)
+    fe = FeatureExtractor(
+        window_stride=30,
+        target_fps=30,
+        window_size=150,
+    )
     fe.extract(
         dataset_list_path=DATASET_LIST_PATH,
         output_path=RAW_FEATURE_PATH,
