@@ -1,5 +1,5 @@
 from src.train import Train
-from src.train import heuristic_Train
+from src.train import HeuristicTrain
 
 
 def main():
@@ -13,7 +13,7 @@ def main():
     print("=" * 20)
 
     # heuristic_train.py
-    T = heuristic_Train(PATH)
+    T = HeuristicTrain(PATH)
     T.run()
 
 
