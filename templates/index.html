@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="zh-CN">
 
 <head>
@@ -122,26 +122,62 @@
     <h1>FANTI_DRIVING</h1>
 
     <div class="dashboard">
+  <body>
+    <div class="page-shell">
+      <h1>FANTI_DRIVING</h1>
+      <div class="dashboard">
         <div class="video-container">
-            <img src="{{ url_for('video_feed') }}" alt="Live Feed" id="video-stream">
+          <img
+            src="{{ url_for('video_feed') }}"
+            alt="Live Feed"
+            id="video-stream"
+          />
         </div>
-
         <div class="stats-panel">
-            <div class="stat-card">
-                <div class="stat-label">System current state</div>
-                <div class="stat-value status-neutral" id="status-text">Initializing...</div>
+          <div class="stat-card">
+            <div class="stat-label">System current state</div>
+            <div class="stat-value status-neutral" id="status-text">
+              Initializing...
             </div>
-
-            <div class="stat-card">
-                <div class="stat-label">AI Fatigue confidence</div>
-                <div class="stat-value" id="prob-text">0.0%</div>
-            </div>
-
-            <div class="stat-card">
-                <div class="stat-label">Eye closure ratio (PERCLOS)</div>
-                <div class="stat-value" id="perclos-text">0.00</div>
-            </div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">AI Fatigue confidence</div>
+            <div class="stat-value" id="prob-text">0.0%</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Eye closure ratio (PERCLOS)</div>
+            <div class="stat-value" id="perclos-text">0.00</div>
+          </div>
         </div>
+      </div>
+      <div class="analysis-grid">
+        <section class="panel">
+          <div class="panel-header">
+            <div class="panel-title">Risk Trend</div>
+            <div class="panel-hint">
+              Last 90 seconds, warning threshold at 80%
+            </div>
+          </div>
+          <div class="chart-wrap">
+            <canvas id="risk-chart"></canvas>
+          </div>
+          <div class="chart-legend">
+            <span class="legend-item"
+              ><span class="legend-line"></span>AI confidence</span
+            ><span class="legend-item"
+              ><span class="legend-line legend-threshold"></span>80%
+              threshold</span
+            >
+          </div>
+        </section>
+        <section class="panel">
+          <div class="panel-header">
+            <div class="panel-title">Event Log</div>
+            <div class="panel-hint">Latest warning reasons</div>
+          </div>
+          <div class="event-log" id="event-log"></div>
+        </section>
+      </div>
     </div>
 
     <script>
