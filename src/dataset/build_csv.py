@@ -4,6 +4,11 @@ from pathlib import Path
 
 
 class CSVBuilder:
+    """
+    CSVBuilder iterates videos under `DATA_DIR` recursively,
+    and outputs all videos with labels.
+    """
+
     DATA_DIR: Path
     OUTPUT_CSV: Path
 
