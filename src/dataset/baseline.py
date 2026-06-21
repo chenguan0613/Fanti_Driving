@@ -78,7 +78,7 @@ class FeatureEngineer:
 
 
 if __name__ == "__main__":
-    INPUT_CSV = "src/dataset/merge_five.csv"
-    OUTPUT_CSV = "src/dataset/merge_five_enhanced_new.csv"
+    INPUT_CSV = "src/dataset/training_features_5.csv"
+    OUTPUT_CSV = "src/dataset/features_enhanced.csv"
     pipeline = FeatureEngineer(INPUT_CSV)
     pipeline.process_and_save(OUTPUT_CSV)

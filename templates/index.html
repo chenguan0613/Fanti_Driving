@@ -164,11 +164,11 @@
 
                 // 3. 智能变色逻辑：根据不同状态赋予不同的 CSS 类名
                 statusEl.className = 'stat-value'; // 先清空原有颜色类
-                if (data.status === "FATIGUE WARNING") {
-                    statusEl.classList.add('status-warning');
-                } else if (data.status === "Safe") {
-                    statusEl.classList.add('status-safe');
-                } else {
+            if (data.status === "Unsafe") {
+                statusEl.classList.add('status-warning');
+            } else if (data.status === "Safe") {
+                statusEl.classList.add('status-safe');
+            } else {
                     statusEl.classList.add('status-neutral'); // Buffering 或是没检测到脸
                 }
             } catch (error) {

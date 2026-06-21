@@ -1,212 +1,264 @@
-import cv2
-import time
-import numpy as np
-import joblib
-import traceback
-import pandas as pd
 from collections import deque
-from dataclasses import asdict
-from src.preprocessing.frame_extractor import FrameExtractor
-from src.realtime.buffer import SlidingWindowBuffer
-from src.features.window_agg import WindowAggregator
+from pathlib import Path
+import sys
+import time
+
+PROJECT_ROOT = Path(__file__).resolve().parents[2]
+WORKSPACE_ROOT = PROJECT_ROOT.parent
+for lib_dir in (PROJECT_ROOT / "python_libs", WORKSPACE_ROOT / "python_libs"):
+    if lib_dir.exists():
+        sys.path.insert(0, str(lib_dir))
+
+# MediaPipe can try to import TensorFlow for optional helpers. The project does
+# not use TensorFlow, and skipping it avoids protobuf conflicts on this machine.
+sys.modules["tensorflow"] = None
+
+import cv2
+import mediapipe as mp
+import numpy as np
 
 
 class FatiguePredictor:
     def __init__(
-        # self, model_path="models/fatigue_model.pkl", task_path="face_landmarker.task"
         self,
-        model_path="models/heuristic_model.pkl",
-        task_path="face_landmarker.task",
+        eye_model_path=None,
+        yawn_model_path=None,
+        unsafe_seconds=5.0,
+        possible_seconds=3.0,
+        ear_threshold=0.18,
+        mar_threshold=0.60,
+        possible_yawns_per_minute=2,
+        unsafe_yawns_per_minute=3,
     ):
-        # Load the features
-        loaded_obj = joblib.load(model_path)
-        if isinstance(loaded_obj, dict) and "model" in loaded_obj:
-            self.model = loaded_obj["model"]
-        else:
-            self.model = loaded_obj
+        print("[INFO] Loading FANTI_DRIVING monitoring core...")
 
-        if isinstance(loaded_obj, dict) and "feature_names" in loaded_obj:
-            self.active_features = list(loaded_obj["feature_names"])
-            print(
-                f"Read the feature list from the model dictionary ({len(self.active_features)} dimension)。"
-            )
-        elif hasattr(self.model, "feature_names_in_"):
-            self.active_features = list(self.model.feature_names_in_)
-            print(
-                f"Read the feature list from inside the model. ({len(self.active_features)} dimension)。"
-            )
-        else:
-            raise ValueError("Unable to obtain feature list")
+        self.face_mesh = mp.solutions.face_mesh.FaceMesh(
+            max_num_faces=1,
+            refine_landmarks=True,
+            min_detection_confidence=0.5,
+            min_tracking_confidence=0.5,
+        )
+        self.hands = mp.solutions.hands.Hands(
+            max_num_hands=2,
+            min_detection_confidence=0.5,
+            min_tracking_confidence=0.5,
+        )
+        self.drawing = mp.solutions.drawing_utils
+        self.hand_connections = mp.solutions.hands.HAND_CONNECTIONS
 
-        # Initialization of component and state
-        self.extractor = FrameExtractor(task_path)
-        self.buffer = SlidingWindowBuffer(window_size=90)
+        self.unsafe_seconds = unsafe_seconds
+        self.possible_seconds = possible_seconds
+        self.ear_threshold = ear_threshold
+        self.mar_threshold = mar_threshold
+        self.possible_yawns_per_minute = possible_yawns_per_minute
+        self.unsafe_yawns_per_minute = unsafe_yawns_per_minute
 
         self.current_status = "Initializing"
         self.fatigue_prob = 0.0
         self.perclos = 0.0
-        self.fps = 0
-        self.prev_time = 0
+        self.fps = 0.0
 
-        self.is_baseline_ready = False
-        self.baseline_history = []
-        self.baseline_stats = {}
+        self.eye_state = "Unknown"
+        self.mouth_state = "Unknown"
+        self.hand_state = "Not detected"
+        self.hand_count = 0
+        self.ear = 0.0
+        self.mar = 0.0
 
-        self.norm_history = deque(maxlen=15)
+        self.eye_closed_time = 0.0
+        self.hand_time = 0.0
+        self.was_yawning = False
+        self.yawn_events = deque()
+        self.prev_time = time.time()
+        self.eye_history = deque(maxlen=90)
 
     def process_frame(self, frame):
         frame = cv2.flip(frame, 1)
         frame = cv2.resize(frame, (1024, 768))
 
-        current_time = time.time()
-        self.fps = 1 / (current_time - self.prev_time) if self.prev_time > 0 else 0
-        self.prev_time = current_time
+        now = time.time()
+        frame_time = max(now - self.prev_time, 1e-6)
+        self.prev_time = now
+        self.fps = 1.0 / frame_time
 
-        feature = self.extractor.extract(frame, timestamp=current_time)
-        self.buffer.push(feature)
+        rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+        face_results = self.face_mesh.process(rgb)
+        hand_results = self.hands.process(rgb)
 
-        if self.buffer.is_ready():
-            raw_stats = WindowAggregator.aggregate(self.buffer.get_window())
-            if raw_stats and raw_stats.face_missing_ratio < 0.50:
-                self.perclos = raw_stats.perclos
-                self._think(raw_stats)
-            else:
-                self.current_status = "No Face Detected"
+        self.eye_state = "Unknown"
+        self.mouth_state = "Unknown"
+
+        if face_results.multi_face_landmarks:
+            face_landmarks = face_results.multi_face_landmarks[0]
+            self.ear = self._compute_ear(face_landmarks)
+            self.mar = self._compute_mar(face_landmarks)
+            self.eye_state = "Closed" if self.ear < self.ear_threshold else "Open"
+            self.mouth_state = "yawn" if self.mar > self.mar_threshold else "no_yawn"
         else:
-            self.current_status = "Buffering"
+            self.current_status = "No Face Detected"
 
-        annotated_frame = self._draw_hud(frame, feature)
+        self.hand_count = len(hand_results.multi_hand_landmarks or [])
+        hand_present = self.hand_count > 0
+        self.hand_state = f"{self.hand_count} hand(s)" if hand_present else "Not detected"
+        if hand_results.multi_hand_landmarks:
+            for hand_landmarks in hand_results.multi_hand_landmarks:
+                self.drawing.draw_landmarks(
+                    frame,
+                    hand_landmarks,
+                    self.hand_connections,
+                )
+
+        self.eye_closed_time = self._update_timer(
+            self.eye_state == "Closed", self.eye_closed_time, frame_time
+        )
+        self.hand_time = self._update_timer(hand_present, self.hand_time, frame_time)
+        self._update_yawn_events(now, self.mouth_state == "yawn")
+
+        self.eye_history.append(1 if self.eye_state == "Closed" else 0)
+        self.perclos = sum(self.eye_history) / len(self.eye_history)
+
+        if face_results.multi_face_landmarks:
+            self.current_status = self._decide_status()
+
+        self.fatigue_prob = self._risk_score()
+        annotated_frame = self._draw_hud(frame)
         return annotated_frame, self.current_status, self.fatigue_prob
 
-    def _think(self, raw_stats):
-        try:
-            # phase 1: Build baseline
-            stats_dict = asdict(raw_stats)
-            if not self.is_baseline_ready:
-                self.baseline_history.append(stats_dict)
-                self.current_status = "Calibrating"
-                if len(self.baseline_history) >= 150:
-                    df_base = pd.DataFrame(self.baseline_history)
-                    for feat in ["ear_mean", "mar_max", "pitch_std", "yaw_std"]:
-                        self.baseline_stats[feat] = df_base[feat].mean()
-                    self.is_baseline_ready = True
-                    print(
-                        "\nPersonal baseline calibration complete. Real-time monitoring now in progress!\n"
-                    )
-                return
+    def _compute_ear(self, face_landmarks):
+        left_eye = [33, 160, 158, 133, 153, 144]
+        right_eye = [362, 385, 387, 263, 373, 380]
 
-            # Phase 2: calculate the enhanced features
-            enhanced_features = stats_dict.copy()
-            # Standarization
-            for feat in ["ear_mean", "pitch_std", "yaw_std"]:
-                base_val = self.baseline_stats[feat]
-                curr_val = stats_dict[feat]
-                norm_val = (curr_val - base_val) / (base_val + 1e-6)
-                enhanced_features[f"{feat}_norm"] = norm_val
+        def eye_aspect_ratio(indexes):
+            p = lambda i: self._landmark_array(face_landmarks, i)
+            vertical_1 = np.linalg.norm(p(indexes[1]) - p(indexes[5]))
+            vertical_2 = np.linalg.norm(p(indexes[2]) - p(indexes[4]))
+            horizontal = np.linalg.norm(p(indexes[0]) - p(indexes[3]))
+            return float((vertical_1 + vertical_2) / (2.0 * horizontal + 1e-6))
 
-            enhanced_features["mar_max_norm"] = (
-                stats_dict["mar_max"] - self.baseline_stats["mar_max"]
-            )
-            # First-order difference velocity calculation
-            curr_ear_norm = enhanced_features["ear_mean_norm"]
-            curr_pitch_norm = enhanced_features["pitch_std_norm"]
+        return (eye_aspect_ratio(left_eye) + eye_aspect_ratio(right_eye)) / 2.0
 
-            if len(self.norm_history) == 15:
-                old_norms = self.norm_history[0]
-                enhanced_features["ear_velocity"] = curr_ear_norm - old_norms["ear"]
-                enhanced_features["pitch_velocity"] = (
-                    curr_pitch_norm - old_norms["pitch"]
-                )
-            else:
-                enhanced_features["ear_velocity"] = 0.0
-                enhanced_features["pitch_velocity"] = 0.0
+    def _compute_mar(self, face_landmarks):
+        p = lambda i: self._landmark_array(face_landmarks, i)
+        vertical_1 = np.linalg.norm(p(13) - p(14))
+        vertical_2 = np.linalg.norm(p(82) - p(87))
+        vertical_3 = np.linalg.norm(p(312) - p(317))
+        horizontal = np.linalg.norm(p(61) - p(291))
+        return float((vertical_1 + vertical_2 + vertical_3) / (3.0 * horizontal + 1e-6))
 
-            self.norm_history.append({"ear": curr_ear_norm, "pitch": curr_pitch_norm})
-            enhanced_features["fatigue_index"] = self.perclos * abs(curr_ear_norm)
+    def _landmark_array(self, face_landmarks, index):
+        landmark = face_landmarks.landmark[index]
+        return np.array([landmark.x, landmark.y], dtype=np.float32)
 
-            # Phase 3: AI prediction
-            input_values = [
-                enhanced_features.get(col, 0.0) for col in self.active_features
-            ]
-            X_input = np.array([input_values])
+    def _landmark_points(self, frame, face_landmarks, indexes):
+        height, width = frame.shape[:2]
+        points = []
+        for index in indexes:
+            landmark = face_landmarks.landmark[index]
+            points.append((int(landmark.x * width), int(landmark.y * height)))
+        return points
 
-            if hasattr(self.model, "predict_proba"):
-                probabilities = self.model.predict_proba(X_input)[0]
-                self.fatigue_prob = round(probabilities[1] * 100, 1)
-            else:
-                decision = self.model.decision_function(X_input)[0]
-                prob = 1.0 / (1.0 + np.exp(-decision))
-                self.fatigue_prob = round(prob * 100, 1)
+    def _crop_region(self, frame, points, margin):
+        height, width = frame.shape[:2]
+        xs = [point[0] for point in points]
+        ys = [point[1] for point in points]
+        x1 = max(min(xs) - margin, 0)
+        y1 = max(min(ys) - margin, 0)
+        x2 = min(max(xs) + margin, width)
+        y2 = min(max(ys) + margin, height)
+        return frame[y1:y2, x1:x2]
 
-            if self.fatigue_prob > 70.0:
-                self.current_status = "FATIGUE WARNING"
-            else:
-                self.current_status = "Safe"
+    def _update_timer(self, condition, timer, frame_time):
+        return timer + frame_time if condition else 0.0
 
-        except Exception as e:
-            print(f"\n[ERROR] 💥 AI 推理时发生崩溃，已被系统拦截: {str(e)}")
-            traceback.print_exc()
-            print("--------------------------------------------------\n")
-            self.current_status = "Error: Check Terminal"
+    def _update_yawn_events(self, now, is_yawning):
+        if is_yawning and not self.was_yawning:
+            self.yawn_events.append(now)
+        self.was_yawning = is_yawning
 
-    def _draw_hud(self, frame, feature):
+        while self.yawn_events and now - self.yawn_events[0] > 60.0:
+            self.yawn_events.popleft()
+
+    def _decide_status(self):
+        possible_count = 0
+
+        if self.eye_closed_time >= self.unsafe_seconds:
+            return "Unsafe"
+        if self.eye_closed_time >= self.possible_seconds:
+            possible_count += 1
+
+        if len(self.yawn_events) >= self.unsafe_yawns_per_minute:
+            return "Unsafe"
+        if len(self.yawn_events) >= self.possible_yawns_per_minute:
+            possible_count += 1
+
+        if self.hand_count >= 2:
+            return "Unsafe"
+        if self.hand_count == 1 and self.hand_time >= self.unsafe_seconds:
+            return "Unsafe"
+        if self.hand_count == 1 and self.hand_time >= self.possible_seconds:
+            possible_count += 1
+
+        if possible_count >= 2:
+            return "Unsafe"
+        if possible_count == 1:
+            return "Possibly Unsafe"
+        return "Safe"
+
+    def _risk_score(self):
+        score = 0.0
+        score += min(self.eye_closed_time / self.unsafe_seconds, 1.0) * 40.0
+        score += min(len(self.yawn_events) / self.unsafe_yawns_per_minute, 1.0) * 35.0
+        score += min(self.hand_time / self.unsafe_seconds, 1.0) * 25.0
+        if self.hand_count >= 2:
+            score = max(score, 80.0)
+        return round(score, 1)
+
+    def _draw_hud(self, frame):
         display_frame = frame.copy()
-        if self.current_status == "FATIGUE WARNING":
-            hud_color = (0, 0, 255)
-            cv2.putText(
+
+        color = (0, 255, 0)
+        if self.current_status == "Possibly Unsafe":
+            color = (0, 180, 255)
+        elif self.current_status == "Unsafe":
+            color = (0, 0, 255)
+        elif self.current_status == "No Face Detected":
+            color = (0, 255, 255)
+
+        self._draw_text(display_frame, f"FPS: {self.fps:.1f}", (20, 30), (255, 255, 0))
+        self._draw_text(display_frame, f"Eye: {self.eye_state}", (20, 70), (255, 255, 255))
+        self._draw_text(display_frame, f"EAR: {self.ear:.3f}", (20, 105), (255, 255, 255))
+        self._draw_text(display_frame, f"Mouth: {self.mouth_state}", (20, 140), (255, 255, 255))
+        self._draw_text(display_frame, f"MAR: {self.mar:.3f}", (20, 175), (255, 255, 255))
+        self._draw_text(display_frame, f"Yawns/min: {len(self.yawn_events)}", (20, 210), (255, 255, 255))
+        self._draw_text(display_frame, f"Hand: {self.hand_state}", (20, 245), (255, 255, 255))
+        self._draw_text(display_frame, f"Status: {self.current_status}", (20, 290), color, 1.0, 3)
+        self._draw_text(display_frame, f"PERCLOS: {self.perclos * 100:.1f}%", (20, 330), color)
+        self._draw_text(display_frame, f"Risk Score: {self.fatigue_prob:.1f}%", (20, 365), color)
+
+        if self.current_status == "Unsafe":
+            self._draw_text(
                 display_frame,
-                "WARNING: FATIGUE DETECTED!",
-                (20, 150),
-                cv2.FONT_HERSHEY_SIMPLEX,
-                1,
+                "WARNING: DANGEROUS DRIVING DETECTED",
+                (20, 720),
                 (0, 0, 255),
+                1.0,
                 3,
             )
-        elif self.current_status == "Safe":
-            hud_color = (0, 255, 0)
-        elif self.current_status == "Calibrating":
-            hud_color = (255, 255, 0)
-            cv2.putText(
-                display_frame,
-                "CALIBRATING BASELINE...",
-                (20, 150),
-                cv2.FONT_HERSHEY_SIMPLEX,
-                1,
-                hud_color,
-                3,
-            )
-        else:
-            hud_color = (0, 255, 255)
-        if self.current_status in ["Safe", "FATIGUE WARNING"]:
-            cv2.putText(
-                display_frame,
-                f"PERCLOS: {self.perclos*100:.1f}%",
-                (20, 70),
-                cv2.FONT_HERSHEY_SIMPLEX,
-                0.7,
-                hud_color,
-                2,
-            )
-            cv2.putText(
-                display_frame,
-                f"AI Prob: {self.fatigue_prob}%",
-                (20, 100),
-                cv2.FONT_HERSHEY_SIMPLEX,
-                0.7,
-                hud_color,
-                2,
-            )
-        cv2.putText(
-            display_frame,
-            f"FPS: {self.fps:.1f}",
-            (20, 30),
-            cv2.FONT_HERSHEY_SIMPLEX,
-            0.6,
-            (255, 255, 0),
-            2,
-        )
 
         return display_frame
 
+    def _draw_text(self, frame, text, position, color, scale=0.75, thickness=2):
+        cv2.putText(
+            frame,
+            text,
+            position,
+            cv2.FONT_HERSHEY_SIMPLEX,
+            scale,
+            color,
+            thickness,
+            cv2.LINE_AA,
+        )
+
     def close(self):
-        self.extractor.close()
+        self.face_mesh.close()
+        self.hands.close()

@@ -80,7 +80,7 @@ class Train:
 
             if score > best_score:
                 best_score = score
-                best_model = best_curr
+                best_model = model
                 best_name = name
         os.makedirs("models", exist_ok=True)
         joblib.dump(
@@ -96,16 +96,14 @@ if __name__ == "__main__":
         "mar_mean",
         "mar_max",
         "pitch_std",
-        # "yaw_mean",
-        # "yaw_std",
+        "yaw_mean",
+        "yaw_std",
         "gaze_y_mean",
         "ear_mean_norm",
         "mar_max_norm",
-        # "yaw_std_norm",
+        "yaw_std_norm",
         "fatigue_index",
-        "perclos",
-        "blink_rate",
     ]
-    path = "./src/dataset/merge_five_enhanced_new.csv"
+    path = "./src/dataset/features_enhanced.csv"
     arena = Train(path)
     arena.run(GOLDEN_FEATURES)
