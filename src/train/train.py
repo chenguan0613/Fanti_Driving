@@ -53,7 +53,7 @@ class Train:
         print(f"Test class ratio: {np.bincount(self.y_test.astype(int))}")
         print()
 
-    def train_and_eval(self):
+    def train_and_eval(self, model_path: str = "models/fatigue_model.pkl"):
         models = [
             ("Random Forest", self._random_forest()),
             ("SVM", self._svm()),
@@ -76,7 +76,7 @@ class Train:
                 best_name = name
             print()
         os.makedirs("models", exist_ok=True)
-        save_path = "models/fatigue_model.pkl"
+        save_path = model_path
         model_data = {"model": best_model, "feature_names": self.features_names}
         joblib.dump(model_data, save_path)
         print(f"\nBest model: {best_name} saved to {save_path}")
