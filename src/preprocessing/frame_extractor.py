@@ -3,7 +3,7 @@ import mediapipe as mp
 from mediapipe.tasks import python
 from mediapipe.tasks.python import vision
 import cv2
-from src.features.frame_schema import FrameFeature
+from src.features import FrameFeature
 
 
 class FrameExtractor:

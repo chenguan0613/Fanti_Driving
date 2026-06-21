@@ -8,7 +8,7 @@ from collections import deque
 from dataclasses import asdict
 from src.preprocessing import FrameExtractor
 from src.realtime.buffer import SlidingWindowBuffer
-from src.features.window_agg import WindowAggregator
+from src.features import WindowAggregator
 
 
 class FatiguePredictor:

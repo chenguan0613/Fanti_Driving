@@ -1,6 +1,6 @@
 import numpy as np
 from typing import List
-from src.features.frame_schema import FrameFeature, WindowFeature
+from .frame_schema import FrameFeature, WindowFeature
 
 
 class WindowAggregator:
