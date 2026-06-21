@@ -22,3 +22,9 @@
   ↓
   报警提示
 
+
+要运行的话：
+pip install -r requirements.txt
+python realtime_detection.py
+训练模型：
+python train_models.py
