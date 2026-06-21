@@ -150,7 +150,7 @@ class Train:
 
 def main():
     # path = "./src/dataset/training_features.csv"
-    path = "./src/dataset/training_features_enhanced.csv"
+    path = "./src/dataset/merge_five_enhanced.csv"
     t = Train(path)
     t.train_and_eval()
 

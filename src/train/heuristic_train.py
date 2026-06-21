@@ -106,6 +106,6 @@ if __name__ == "__main__":
         "perclos",
         "blink_rate",
     ]
-    path = "./src/dataset/features_enhanced.csv"
+    path = "./src/dataset/merge_five_enhanced_new.csv"
     arena = Train(path)
     arena.run(GOLDEN_FEATURES)
