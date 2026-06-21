@@ -5,7 +5,10 @@ from src.realtime import FatiguePredictor
 MODEL_PATH = "./models/fatigue_model.pkl"
 
 app = Flask(__name__, template_folder="../templates")
-predictor = FatiguePredictor(model_path=MODEL_PATH)
+predictor = FatiguePredictor(
+    model_path=MODEL_PATH,
+    window_size=150,
+)
 
 
 def generate_frames():
