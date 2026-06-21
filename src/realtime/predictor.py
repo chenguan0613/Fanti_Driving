@@ -7,7 +7,7 @@ import pandas as pd
 from collections import deque
 from dataclasses import asdict
 from src.preprocessing import FrameExtractor
-from src.realtime.buffer import SlidingWindowBuffer
+from .buffer import SlidingWindowBuffer
 from src.features import WindowAggregator
 
 

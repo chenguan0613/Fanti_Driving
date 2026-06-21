@@ -1,6 +1,6 @@
 import cv2
 from flask import Flask, render_template, Response, jsonify
-from src.realtime.predictor import FatiguePredictor
+from src.realtime import FatiguePredictor
 
 app = Flask(__name__)
 # 全局实例化预测器，避免每次请求重复加载模型
