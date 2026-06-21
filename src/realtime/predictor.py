@@ -40,7 +40,7 @@ class FatiguePredictor:
 
         # Initialization of component and state
         self.extractor = FrameExtractor(task_path)
-        self.buffer = SlidingWindowBuffer(window_size=90)
+        self.buffer = SlidingWindowBuffer(window_size=150)
 
         self.current_status = "Initializing"
         self.fatigue_prob = 0.0
