@@ -29,12 +29,12 @@ class FatiguePredictor:
         if isinstance(loaded_obj, dict) and "feature_names" in loaded_obj:
             self.active_features = list(loaded_obj["feature_names"])
             print(
-                f"Read the feature list from the model dictionary ({len(self.active_features)} dimension)。"
+                f"Read the feature list from the model dictionary ({len(self.active_features)} dimensions)."
             )
         elif hasattr(self.model, "feature_names_in_"):
             self.active_features = list(self.model.feature_names_in_)
             print(
-                f"Read the feature list from inside the model. ({len(self.active_features)} dimension)。"
+                f"Read the feature list from inside the model ({len(self.active_features)} dimensions)."
             )
         else:
             raise ValueError("Unable to obtain feature list")
@@ -137,7 +137,7 @@ class FatiguePredictor:
                 self.current_status = "Safe"
 
         except Exception as e:
-            print(f"\n[ERROR] 💥 AI 推理时发生崩溃，已被系统拦截: {str(e)}")
+            print(f"\n[ERROR] AI inference failed: {str(e)}")
             traceback.print_exc()
             print("--------------------------------------------------\n")
             self.current_status = "Error: Check Terminal"
