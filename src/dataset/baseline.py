@@ -71,5 +71,3 @@ class FeatureBaseline:
         self._normalize_baseline()
         self._calculate_dynamics()
         self.df.to_csv(output_path, index=False)
-        meta_cols = {"video_id", "subject_id", "label"}
-        features = [c for c in self.df.columns if c not in meta_cols]
