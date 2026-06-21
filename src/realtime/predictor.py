@@ -17,6 +17,7 @@ class FatiguePredictor:
         self,
         model_path="models/heuristic_model.pkl",
         task_path="face_landmarker.task",
+        window_size=150,
     ):
         # Load the features
         loaded_obj = joblib.load(model_path)
@@ -40,7 +41,7 @@ class FatiguePredictor:
 
         # Initialization of component and state
         self.extractor = FrameExtractor(task_path)
-        self.buffer = SlidingWindowBuffer(window_size=150)
+        self.buffer = SlidingWindowBuffer(window_size=window_size)
 
         self.current_status = "Initializing"
         self.fatigue_prob = 0.0
