@@ -6,7 +6,7 @@ import traceback
 import pandas as pd
 from collections import deque
 from dataclasses import asdict
-from src.preprocessing.frame_extractor import FrameExtractor
+from src.preprocessing import FrameExtractor
 from src.realtime.buffer import SlidingWindowBuffer
 from src.features.window_agg import WindowAggregator
 

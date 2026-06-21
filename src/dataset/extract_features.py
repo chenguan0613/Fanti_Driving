@@ -3,8 +3,7 @@ from pathlib import Path
 from dataclasses import asdict
 from multiprocessing import Pool, cpu_count
 from functools import partial
-from src.preprocessing.video_loader import VideoLoader
-from src.preprocessing.frame_extractor import FrameExtractor
+from src.preprocessing import VideoLoader, FrameExtractor
 from src.realtime.buffer import SlidingWindowBuffer
 from src.features.window_agg import WindowAggregator
 
