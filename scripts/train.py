@@ -1,10 +1,20 @@
 from src.train import Train
+from src.train import heuristic_Train
 
 
 def main():
-    PATH = "./data/dataset/merge_five_enhanced.csv"
+    PATH = "./data/dataset/enhanced_merged.csv"
+    # train.py
     t = Train(PATH)
     t.train_and_eval("models/fatigue_model.pkl")
+
+    print("=" * 20)
+    print("After using heuristic learning to automatically select the features")
+    print("=" * 20)
+
+    # heuristic_train.py
+    T = heuristic_Train(PATH)
+    T.run()
 
 
 if __name__ == "__main__":
