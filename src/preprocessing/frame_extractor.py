@@ -28,7 +28,7 @@ class FrameExtractor:
         if self.detector:
             self.detector.close()
 
-    def extract(self, frame, timestamp=0) -> FrameFeature:
+    def extract(self, frame, timestamp=0.0) -> FrameFeature:
         mp_image = self._to_mp_image(frame)
         result = self._detect(mp_image)
         if not self._has_face(result):
