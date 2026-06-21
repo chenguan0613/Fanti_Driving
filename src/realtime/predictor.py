@@ -19,6 +19,7 @@ class FatiguePredictor:
         task_path="face_landmarker.task",
         window_size=150,
     ):
+        self.status_reason = ""
         # Load the features
         loaded_obj = joblib.load(model_path)
         if isinstance(loaded_obj, dict) and "model" in loaded_obj:
@@ -73,8 +74,10 @@ class FatiguePredictor:
                 self._think(raw_stats)
             else:
                 self.current_status = "No Face Detected"
+                self.status_reason = "Face landmarks are not visible enough"
         else:
             self.current_status = "Buffering"
+            self.status_reason = "Collecting enough frames for stable analysis"
 
         annotated_frame = self._draw_hud(frame)
         return annotated_frame, self.current_status, self.fatigue_prob
@@ -87,6 +90,7 @@ class FatiguePredictor:
             if not self.is_baseline_ready:
                 self.baseline_history.append(asdict(row))
                 self.current_status = "Calibrating"
+                self.status_reason = "Building personal baseline from current driver"
                 if len(self.baseline_history) >= 150:
                     df_base = pd.DataFrame(self.baseline_history)
                     for feat in NORM_COLS:
@@ -133,14 +137,66 @@ class FatiguePredictor:
 
             if self.fatigue_prob > 70.0:
                 self.current_status = "FATIGUE WARNING"
+                self.status_reason = self._build_warning_reason(row)
             else:
                 self.current_status = "Safe"
+                self.status_reason = "Driver behavior is within the normal baseline"
 
         except Exception as e:
             print(f"\n[ERROR] AI inference failed: {str(e)}")
             traceback.print_exc()
             print("--------------------------------------------------\n")
             self.current_status = "Error: Check Terminal"
+            self.status_reason = "Internal inference error; check terminal output"
+
+    def _build_warning_reason(self, row: FeatureRow):
+        eye_score = self.perclos
+        blink_rate = row.blink_rate
+        mouth_score = max(row.mar_max_norm, 0.0)
+        pitch_score = max(row.pitch_std_norm, 0.0)
+        yaw_score = max(row.yaw_std_norm, 0.0)
+        face_score = row.face_missing_ratio
+
+        # Explanation thresholds only. They do not change the AI warning decision.
+        eye_reason_threshold = 0.20
+        blink_rate_reason_threshold = 0.50
+        mouth_reason_threshold = 0.20
+        head_reason_threshold = 1.20
+        face_reason_threshold = 0.25
+
+        reasons = []
+
+        # Direct behavior cues are prioritized over head motion because yawning and eye closure
+        # can naturally cause small head movement, and driving vibration can affect head pose.
+        if mouth_score >= mouth_reason_threshold:
+            reasons.append(
+                "mouth opening increased clearly compared with personal baseline"
+            )
+        if eye_score >= eye_reason_threshold:
+            reasons.append(
+                "sustained eye closure increased during the monitoring window"
+            )
+        elif blink_rate >= blink_rate_reason_threshold:
+            reasons.append("frequent blinking detected during the monitoring window")
+        if face_score >= face_reason_threshold:
+            reasons.append("face detection was unstable during the analysis window")
+
+        if len(reasons) < 2 and max(pitch_score, yaw_score) >= head_reason_threshold:
+            if pitch_score >= yaw_score:
+                reasons.append(
+                    "large head pitch movement compared with personal baseline"
+                )
+            else:
+                reasons.append(
+                    "large head yaw movement compared with personal baseline"
+                )
+
+        if not reasons:
+            reasons.append(
+                "AI warning was triggered by combined feature patterns; no single visible cue passed the explanation threshold"
+            )
+
+        return "; ".join(reasons[:2])
 
     def _draw_hud(self, frame):
         display_frame = frame.copy()
