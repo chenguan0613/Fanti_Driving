@@ -55,6 +55,7 @@ def get_status():
             "status": predictor.current_status,
             "fatigue_prob": predictor.fatigue_prob,
             "perclos": round(predictor.perclos, 2),
+            "reason": predictor.status_reason,
         }
     )
 
