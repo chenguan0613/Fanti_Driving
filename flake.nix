@@ -23,11 +23,6 @@
         python313
         stdenv.cc.cc.lib
         zlib
-        (pkgs.python3.withPackages (python-pkgs:
-          with python-pkgs; [
-            # Python packages:
-            # opencv4
-          ]))
       ];
       LD_LIBRARY_PATH = pkgs.lib.makeLibraryPath [
         pkgs.glib
@@ -40,6 +35,7 @@
         pkgs.libxcb
         pkgs.zlib
       ];
+      PYTHONPATH = ".";
 
       # Shell hooks.
       shellHook = ''
