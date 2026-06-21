@@ -1,5 +1,4 @@
 import pandas as pd
-import numpy as np
 import os
 import joblib
 from sklearn.model_selection import GroupShuffleSplit, GridSearchCV
@@ -11,16 +10,15 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.linear_model import LogisticRegression
 from sklearn.calibration import CalibratedClassifierCV
+from src.features import GOLDEN_FEATURES
 
 
-class Train:
+class HeuristicTrain:
     def __init__(self, dataset_path: str):
         self.df = pd.read_csv(dataset_path)
 
-    def run(
-        self, selected_features: list, output_path: str = "models/heuristic_model.pkl"
-    ):
-        X = self.df[selected_features].values
+    def run(self, output_path: str = "models/heuristic_model.pkl"):
+        X = self.df[GOLDEN_FEATURES].values
         y = self.df["label"].values
         groups = self.df["subject_id"].values
         gss = GroupShuffleSplit(n_splits=1, test_size=0.2, random_state=42)
@@ -47,7 +45,7 @@ class Train:
                         ),
                     ]
                 ),
-                {"svc__estimator__C": [0.1, 1, 10]},  # 注意参数名前缀变化
+                {"svc__estimator__C": [0.1, 1, 10]},
             ),
             "Decision Tree": (
                 DecisionTreeClassifier(class_weight="balanced", random_state=42),
@@ -84,28 +82,7 @@ class Train:
                 best_name = name
         os.makedirs("models", exist_ok=True)
         joblib.dump(
-            {"model": best_model, "feature_names": selected_features}, output_path
+            {"model": best_model, "feature_names": GOLDEN_FEATURES}, output_path
         )
         print(f"\nThe Best Model: {best_name} (F1: {best_score:.4f})")
         print(f"Model has been packeted into: {output_path}")
-
-
-if __name__ == "__main__":
-    GOLDEN_FEATURES = [
-        "ear_std",
-        "mar_mean",
-        "mar_max",
-        "pitch_std",
-        # "yaw_mean",
-        # "yaw_std",
-        "gaze_y_mean",
-        "ear_mean_norm",
-        "mar_max_norm",
-        # "yaw_std_norm",
-        "fatigue_index",
-        "perclos",
-        "blink_rate",
-    ]
-    path = "./src/dataset/merge_five_enhanced_new.csv"
-    arena = Train(path)
-    arena.run(GOLDEN_FEATURES)
