@@ -111,8 +111,11 @@ class FatiguePredictor:
                 curr_val = getattr(row, feat)
                 setattr(row, f"{feat}_norm", (curr_val - base_val) / (base_val + 1e-6))
 
-            row.mar_max_norm = row.mar_max - self.baseline_stats["mar_max"]
             row.mar_mean_norm = row.mar_mean - self.baseline_stats["mar_mean"]
+            row.mar_max_norm = max(
+                row.mar_max - self.baseline_stats["mar_max"],
+                self.baseline_stats["mar_max"],
+            )
 
             curr_ear_norm = row.ear_mean_norm
             curr_pitch_norm = row.pitch_std_norm
