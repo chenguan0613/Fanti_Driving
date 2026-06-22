@@ -103,7 +103,10 @@ class FatiguePredictor:
                 return
 
             # Phase 2: calculate the enhanced features
-            for feat in ["ear_mean", "pitch_std", "yaw_std"]:
+            for feat in [
+                "ear_mean",
+                "pitch_std",
+            ]:
                 base_val = self.baseline_stats[feat]
                 curr_val = getattr(row, feat)
                 setattr(row, f"{feat}_norm", (curr_val - base_val) / (base_val + 1e-6))
@@ -166,7 +169,6 @@ class FatiguePredictor:
         blink_rate = row.blink_rate
         mouth_score = max(row.mar_max_norm, 0.0)
         pitch_score = max(row.pitch_std_norm, 0.0)
-        yaw_score = max(row.yaw_std_norm, 0.0)
         face_score = row.face_missing_ratio
 
         # Explanation thresholds only. They do not change the AI warning decision.
@@ -193,15 +195,8 @@ class FatiguePredictor:
         if face_score >= face_reason_threshold:
             reasons.append("face detection was unstable during the analysis window")
 
-        if len(reasons) < 2 and max(pitch_score, yaw_score) >= head_reason_threshold:
-            if pitch_score >= yaw_score:
-                reasons.append(
-                    "large head pitch movement compared with personal baseline"
-                )
-            else:
-                reasons.append(
-                    "large head yaw movement compared with personal baseline"
-                )
+        if len(reasons) < 2 and pitch_score >= head_reason_threshold:
+            reasons.append("large head pitch movement compared with personal baseline")
 
         if not reasons:
             reasons.append(
