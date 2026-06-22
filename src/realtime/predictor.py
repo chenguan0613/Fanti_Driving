@@ -55,6 +55,7 @@ class FatiguePredictor:
         self.baseline_stats = {}
 
         self.norm_history = deque(maxlen=15)
+        self.yawn_consecutive = 0
 
     def process_frame(self, frame):
         frame = cv2.flip(frame, 1)
@@ -102,12 +103,19 @@ class FatiguePredictor:
                 return
 
             # Phase 2: calculate the enhanced features
-            for feat in ["ear_mean", "pitch_std", "yaw_std"]:
+            for feat in [
+                "ear_mean",
+                "pitch_std",
+            ]:
                 base_val = self.baseline_stats[feat]
                 curr_val = getattr(row, feat)
                 setattr(row, f"{feat}_norm", (curr_val - base_val) / (base_val + 1e-6))
 
-            row.mar_max_norm = row.mar_max - self.baseline_stats["mar_max"]
+            row.mar_mean_norm = row.mar_mean - self.baseline_stats["mar_mean"]
+            row.mar_max_norm = max(
+                row.mar_max - self.baseline_stats["mar_max"],
+                self.baseline_stats["mar_max"],
+            )
 
             curr_ear_norm = row.ear_mean_norm
             curr_pitch_norm = row.pitch_std_norm
@@ -135,9 +143,20 @@ class FatiguePredictor:
                 prob = 1.0 / (1.0 + np.exp(-decision))
                 self.fatigue_prob = round(prob * 100, 1)
 
+            # Yaun heuristic: sustained elevated mean MAR over ~1.5 seconds
+            if row.mar_mean_norm > 0.12:
+                self.yawn_consecutive += 1
+            else:
+                self.yawn_consecutive = 0
+
             if self.fatigue_prob > 70.0:
                 self.current_status = "FATIGUE WARNING"
                 self.status_reason = self._build_warning_reason(row)
+            elif self.yawn_consecutive >= 45:
+                self.current_status = "FATIGUE WARNING"
+                self.status_reason = (
+                    "Yawning detected: mouth opening well above personal baseline"
+                )
             else:
                 self.current_status = "Safe"
                 self.status_reason = "Driver behavior is within the normal baseline"
@@ -154,7 +173,6 @@ class FatiguePredictor:
         blink_rate = row.blink_rate
         mouth_score = max(row.mar_max_norm, 0.0)
         pitch_score = max(row.pitch_std_norm, 0.0)
-        yaw_score = max(row.yaw_std_norm, 0.0)
         face_score = row.face_missing_ratio
 
         # Explanation thresholds only. They do not change the AI warning decision.
@@ -181,15 +199,8 @@ class FatiguePredictor:
         if face_score >= face_reason_threshold:
             reasons.append("face detection was unstable during the analysis window")
 
-        if len(reasons) < 2 and max(pitch_score, yaw_score) >= head_reason_threshold:
-            if pitch_score >= yaw_score:
-                reasons.append(
-                    "large head pitch movement compared with personal baseline"
-                )
-            else:
-                reasons.append(
-                    "large head yaw movement compared with personal baseline"
-                )
+        if len(reasons) < 2 and pitch_score >= head_reason_threshold:
+            reasons.append("large head pitch movement compared with personal baseline")
 
         if not reasons:
             reasons.append(

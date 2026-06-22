@@ -29,8 +29,6 @@ class WindowFeature:
     mar_max: float
     pitch_mean: float
     pitch_std: float
-    yaw_mean: float
-    yaw_std: float
     gaze_x_mean: float
     gaze_y_mean: float
 
@@ -48,8 +46,6 @@ class FeatureRow:
     mar_max: float = 0.0
     pitch_mean: float = 0.0
     pitch_std: float = 0.0
-    yaw_mean: float = 0.0
-    yaw_std: float = 0.0
     gaze_x_mean: float = 0.0
     gaze_y_mean: float = 0.0
 
@@ -60,10 +56,10 @@ class FeatureRow:
     ear_mean_norm: float = 0.0
     mar_max_norm: float = 0.0
     pitch_std_norm: float = 0.0
-    yaw_std_norm: float = 0.0
     ear_velocity: float = 0.0
     pitch_velocity: float = 0.0
     fatigue_index: float = 0.0
+    mar_mean_norm: float = 0.0
 
     @staticmethod
     def from_window(stats: WindowFeature, video_id="", subject_id="", label=-1):
@@ -79,8 +75,6 @@ class FeatureRow:
             mar_max=stats.mar_max,
             pitch_mean=stats.pitch_mean,
             pitch_std=stats.pitch_std,
-            yaw_mean=stats.yaw_mean,
-            yaw_std=stats.yaw_std,
             gaze_x_mean=stats.gaze_x_mean,
             gaze_y_mean=stats.gaze_y_mean,
             video_id=video_id,
@@ -100,16 +94,14 @@ SMOOTH_COLS = [
     "mar_max",
     "pitch_mean",
     "pitch_std",
-    "yaw_mean",
-    "yaw_std",
     "gaze_x_mean",
     "gaze_y_mean",
 ]
 NORM_COLS = [
     "ear_mean",
+    "mar_mean",
     "mar_max",
     "pitch_std",
-    "yaw_std",
 ]
 META_COLS = [
     "video_id",
@@ -120,7 +112,6 @@ ENHANCED_COLS = [
     "ear_mean_norm",
     "mar_max_norm",
     "pitch_std_norm",
-    "yaw_std_norm",
     "ear_velocity",
     "pitch_velocity",
     "fatigue_index",
@@ -131,12 +122,9 @@ GOLDEN_FEATURES = [
     "mar_mean",
     "mar_max",
     "pitch_std",
-    # "yaw_mean",
-    # "yaw_std",
     "gaze_y_mean",
     "ear_mean_norm",
     "mar_max_norm",
-    # "yaw_std_norm",
     "fatigue_index",
     "perclos",
     "blink_rate",

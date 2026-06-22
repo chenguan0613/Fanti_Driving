@@ -19,4 +19,5 @@ __all__ = [
     "META_COLS",
     "ENHANCED_COLS",
     "WindowAggregator",
+    "GOLDEN_FEATURES",
 ]
