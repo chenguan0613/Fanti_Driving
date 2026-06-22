@@ -55,6 +55,7 @@ class FatiguePredictor:
         self.baseline_stats = {}
 
         self.norm_history = deque(maxlen=15)
+        self.yawn_consecutive = 0
 
     def process_frame(self, frame):
         frame = cv2.flip(frame, 1)
@@ -135,9 +136,20 @@ class FatiguePredictor:
                 prob = 1.0 / (1.0 + np.exp(-decision))
                 self.fatigue_prob = round(prob * 100, 1)
 
+            # Yaun heuristic: sustained high MAR over ~1.5 seconds
+            if row.mar_max_norm > 0.30:
+                self.yawn_consecutive += 1
+            else:
+                self.yawn_consecutive = 0
+
             if self.fatigue_prob > 70.0:
                 self.current_status = "FATIGUE WARNING"
                 self.status_reason = self._build_warning_reason(row)
+            elif self.yawn_consecutive >= 45:
+                self.current_status = "FATIGUE WARNING"
+                self.status_reason = (
+                    "Yawning detected: mouth opening well above personal baseline"
+                )
             else:
                 self.current_status = "Safe"
                 self.status_reason = "Driver behavior is within the normal baseline"
