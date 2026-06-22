@@ -59,6 +59,7 @@ class FeatureRow:
     ear_velocity: float = 0.0
     pitch_velocity: float = 0.0
     fatigue_index: float = 0.0
+    mar_mean_norm: float = 0.0
 
     @staticmethod
     def from_window(stats: WindowFeature, video_id="", subject_id="", label=-1):
@@ -98,6 +99,7 @@ SMOOTH_COLS = [
 ]
 NORM_COLS = [
     "ear_mean",
+    "mar_mean",
     "mar_max",
     "pitch_std",
 ]

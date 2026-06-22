@@ -112,6 +112,7 @@ class FatiguePredictor:
                 setattr(row, f"{feat}_norm", (curr_val - base_val) / (base_val + 1e-6))
 
             row.mar_max_norm = row.mar_max - self.baseline_stats["mar_max"]
+            row.mar_mean_norm = row.mar_mean - self.baseline_stats["mar_mean"]
 
             curr_ear_norm = row.ear_mean_norm
             curr_pitch_norm = row.pitch_std_norm
@@ -139,8 +140,8 @@ class FatiguePredictor:
                 prob = 1.0 / (1.0 + np.exp(-decision))
                 self.fatigue_prob = round(prob * 100, 1)
 
-            # Yaun heuristic: sustained high MAR over ~1.5 seconds
-            if row.mar_max_norm > 0.30:
+            # Yaun heuristic: sustained elevated mean MAR over ~1.5 seconds
+            if row.mar_mean_norm > 0.12:
                 self.yawn_consecutive += 1
             else:
                 self.yawn_consecutive = 0
