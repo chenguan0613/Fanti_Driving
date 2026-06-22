@@ -1,186 +1,77 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="zh-CN">
-
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FANTI_DRIVING 智能监控大屏</title>
-    <style>
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: #12121e;
-            color: #e0e0e0;
-            margin: 0;
-            padding: 30px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-        }
-
-        h1 {
-            color: #00e5ff;
-            text-shadow: 0 0 10px rgba(0, 229, 255, 0.5);
-            margin-bottom: 30px;
-            letter-spacing: 2px;
-        }
-
-        .dashboard {
-            display: flex;
-            gap: 40px;
-            max-width: 1200px;
-            width: 100%;
-            justify-content: center;
-            align-items: flex-start;
-        }
-
-        .video-container {
-            background-color: #1e1e2f;
-            padding: 15px;
-            border-radius: 16px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6);
-            border: 1px solid #2a2a40;
-        }
-
-        .video-container img {
-            border-radius: 8px;
-            display: block;
-            width: 640px;
-            height: 480px;
-            object-fit: cover;
-            background-color: #000;
-        }
-
-        .stats-panel {
-            display: flex;
-            flex-direction: column;
-            gap: 20px;
-            width: 320px;
-        }
-
-        .stat-card {
-            background-color: #1e1e2f;
-            padding: 25px;
-            border-radius: 16px;
-            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4);
-            border: 1px solid #2a2a40;
-            text-align: center;
-            transition: transform 0.2s ease;
-        }
-
-        .stat-card:hover {
-            transform: translateY(-5px);
-        }
-
-        .stat-label {
-            font-size: 14px;
-            color: #8a8a9e;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            margin-bottom: 10px;
-        }
-
-        .stat-value {
-            font-size: 32px;
-            font-weight: bold;
-            font-family: 'Courier New', Courier, monospace;
-        }
-
-        .status-safe {
-            color: #00e676;
-            text-shadow: 0 0 10px rgba(0, 230, 118, 0.4);
-        }
-
-        .status-warning {
-            color: #ff1744;
-            text-shadow: 0 0 10px rgba(255, 23, 68, 0.6);
-            animation: pulse 1s infinite;
-        }
-
-        .status-neutral {
-            color: #ffea00;
-            text-shadow: 0 0 10px rgba(255, 234, 0, 0.4);
-        }
-
-        @keyframes pulse {
-            0% {
-                opacity: 1;
-            }
-
-            50% {
-                opacity: 0.6;
-            }
-
-            100% {
-                opacity: 1;
-            }
-        }
-    </style>
-</head>
-
-<body>
-
-    <h1>FANTI_DRIVING</h1>
-
-    <div class="dashboard">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0"
+    />
+    <title>FANTI_DRIVING Monitoring Dashboard</title>
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='css/main.css') }}"
+    />
+    <script
+      defer
+      src="{{ url_for('static', filename='js/dashboard.js') }}"
+    ></script>
+  </head>
+  <body>
+    <div class="page-shell">
+      <h1>FANTI_DRIVING</h1>
+      <div class="dashboard">
         <div class="video-container">
-            <img src="{{ url_for('video_feed') }}" alt="Live Feed" id="video-stream">
+          <img
+            src="{{ url_for('video_feed') }}"
+            alt="Live Feed"
+            id="video-stream"
+          />
         </div>
-
         <div class="stats-panel">
-            <div class="stat-card">
-                <div class="stat-label">System current state</div>
-                <div class="stat-value status-neutral" id="status-text">Initializing...</div>
+          <div class="stat-card">
+            <div class="stat-label">System current state</div>
+            <div class="stat-value status-neutral" id="status-text">
+              Initializing...
             </div>
-
-            <div class="stat-card">
-                <div class="stat-label">AI Fatigue confidence</div>
-                <div class="stat-value" id="prob-text">0.0%</div>
-            </div>
-
-            <div class="stat-card">
-                <div class="stat-label">Eye closure ratio (PERCLOS)</div>
-                <div class="stat-value" id="perclos-text">0.00</div>
-            </div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">AI Fatigue confidence</div>
+            <div class="stat-value" id="prob-text">0.0%</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Eye closure ratio (PERCLOS)</div>
+            <div class="stat-value" id="perclos-text">0.00</div>
+          </div>
         </div>
+      </div>
+      <div class="analysis-grid">
+        <section class="panel">
+          <div class="panel-header">
+            <div class="panel-title">Risk Trend</div>
+            <div class="panel-hint">
+              Last 90 seconds, warning threshold at 80%
+            </div>
+          </div>
+          <div class="chart-wrap">
+            <canvas id="risk-chart"></canvas>
+          </div>
+          <div class="chart-legend">
+            <span class="legend-item"
+              ><span class="legend-line"></span>AI confidence</span
+            ><span class="legend-item"
+              ><span class="legend-line legend-threshold"></span>80%
+              threshold</span
+            >
+          </div>
+        </section>
+        <section class="panel">
+          <div class="panel-header">
+            <div class="panel-title">Event Log</div>
+            <div class="panel-hint">Latest warning reasons</div>
+          </div>
+          <div class="event-log" id="event-log"></div>
+        </section>
+      </div>
     </div>
-
-    <script>
-        // 定义一个异步函数来获取状态
-        async function fetchSystemStatus() {
-            try {
-                // 向我们的 Flask /api/status 接口发起请求
-                const response = await fetch('/api/status');
-                const data = await response.json();
-
-                // 1. 获取对应的 DOM 元素
-                const statusEl = document.getElementById('status-text');
-                const probEl = document.getElementById('prob-text');
-                const perclosEl = document.getElementById('perclos-text');
-
-                // 2. 将后端传来的数据渲染到网页文字上
-                statusEl.innerText = data.status;
-                probEl.innerText = data.fatigue_prob + '%';
-                perclosEl.innerText = data.perclos;
-
-                // 3. 智能变色逻辑：根据不同状态赋予不同的 CSS 类名
-                statusEl.className = 'stat-value'; // 先清空原有颜色类
-                if (data.status === "FATIGUE WARNING") {
-                    statusEl.classList.add('status-warning');
-                } else if (data.status === "Safe") {
-                    statusEl.classList.add('status-safe');
-                } else {
-                    statusEl.classList.add('status-neutral'); // Buffering 或是没检测到脸
-                }
-            } catch (error) {
-                console.error("Unable to connect to monitoring core:", error);
-            }
-        }
-
-        setInterval(fetchSystemStatus, 1000);
-
-        // 网页刚加载时，立刻执行一次，避免首秒空白
-        fetchSystemStatus();
-    </script>
-</body>
-
+  </body>
 </html>
