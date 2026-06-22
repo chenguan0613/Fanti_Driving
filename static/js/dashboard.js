@@ -1,7 +1,7 @@
 let lastLogKey = "";
 const riskHistory = [];
 const maxRiskPoints = 90;
-const thresholdValue = 70;
+const thresholdValue = 80;
 
 function getLogClass(status) {
   if (status === "FATIGUE WARNING") return "log-warning";
