@@ -2,7 +2,7 @@ import cv2
 from flask import Flask, render_template, Response, jsonify
 from src.realtime import FatiguePredictor
 
-MODEL_PATH = "./models/fatigue_model.pkl"
+MODEL_PATH = "./models/heuristic_model.pkl"
 
 app = Flask(__name__, template_folder="../templates", static_folder="../static")
 predictor = FatiguePredictor(
