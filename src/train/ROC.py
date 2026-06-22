@@ -65,8 +65,8 @@ class ModelEvaluator:
         plt.plot(
             [0, 1], [0, 1], color="navy", lw=2, linestyle="--", label="Random Chance"
         )
-        plt.xlim([0.0, 1.0])
-        plt.ylim([0.0, 1.05])
+        plt.xlim((0.0, 1.0))
+        plt.ylim((0.0, 1.05))
         plt.xlabel("False Positive Rate (FPR)", fontsize=12)
         plt.ylabel("True Positive Rate (TPR)", fontsize=12)
         plt.title(
