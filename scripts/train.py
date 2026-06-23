@@ -3,12 +3,7 @@ from src.train import HeuristicTrain
 
 def main():
     PATH = "./data/dataset/enhanced_merged.csv"
-
-    print("=" * 20)
-    print("After using heuristic learning to automatically select the features")
-    print("=" * 20)
-
-    # heuristic_train.py
+    # Using the dataset to train
     T = HeuristicTrain(PATH)
     T.run("models/heuristic_model.pkl")
 
