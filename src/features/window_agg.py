@@ -3,7 +3,14 @@ from typing import List
 from .frame_schema import FrameFeature, WindowFeature
 
 
+# Single-frame physical features
 class WindowAggregator:
+    """
+    The features of multiple consecutive single-frame images
+    collected within a time window are condensed into a macroscopic
+    window feature record.
+    """
+
     @staticmethod
     def aggregate(frames: List[FrameFeature]) -> WindowFeature:
         if not frames:
@@ -24,7 +31,9 @@ class WindowAggregator:
             )
 
         total_frames = len(frames)
+        # Delete the frame which does not have face
         valid_frames = [f for f in frames if f.face_detected == 1]
+        # Avoid the situation: There are frames in the window but no face
         if not valid_frames:
             return WindowFeature(
                 face_missing_ratio=1.0,
@@ -41,7 +50,7 @@ class WindowAggregator:
                 gaze_x_mean=0.0,
                 gaze_y_mean=0.0,
             )
-
+        # Calculate the face loss rate
         face_missing_ratio = 1.0 - (len(valid_frames) / total_frames)
 
         # Extracting numerical sequences
@@ -51,15 +60,16 @@ class WindowAggregator:
         gaze_xs = [f.gaze_x for f in valid_frames]
         gaze_ys = [f.gaze_y for f in valid_frames]
 
+        # Obtain the data of normal eye opening
+        baseline = np.median(ears)
+        # Determine the threshold of eye closing
+        threshold = baseline * 0.4
+
         # calculate PERCLOS
-        closed_frames_count = sum([f.eye_closed for f in valid_frames])
+        closed_frames_count = sum([1 for ear in ears if ear < threshold])
         perclos = closed_frames_count / len(valid_frames)
 
-        # detect blinks from raw EAR waveform
-        # a blink is a rapid drop below 60% of median EAR, then recovery
-        baseline = np.median(ears)
-        threshold = baseline * 0.6
-
+        # Blink Detection
         blink_count = 0
         in_blink = False
         for ear in ears:
@@ -69,7 +79,7 @@ class WindowAggregator:
                     in_blink = True
             else:
                 in_blink = False
-
+        # Normalize the blink rate
         window_duration = valid_frames[-1].timestamp - valid_frames[0].timestamp
         blink_rate = blink_count / window_duration if window_duration > 0 else 0.0
 
