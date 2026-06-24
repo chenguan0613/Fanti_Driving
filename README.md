@@ -15,7 +15,7 @@
 
    ```bash
    source .venv/bin/activate # Linux
-   .\.venv\bin\Activate.ps1 # Windows
+   .\.venv\Scripts\Activate.ps1 # Windows
    ```
 
 3. Install dependencies:
@@ -98,42 +98,41 @@ $env:PYTHONPATH = "."
 ## Project Architecture
 
 ```bash
-Fanti_Driving/
-├── app.py
-├── requirements.txt
-├── face_landmarker.task
-│
-├── models/
-│   ├── fatigue_model.pkl
-│   └── heuristic_model.pkl
-│
-├── src/
-│   │
-│   ├── preprocessing/
-│   │   ├── video_loader.py
-│   │   └── frame_extractor.py
-│   │
-│   ├── features/
-│   │   ├── frame_schema.py
-│   │   └── window_agg.py
-│   │
-│   ├── train/
-│   │   ├── chen_train.py
-│   │   ├── heuristic_selection.py
-│   │   └── heuristic_train.py
-│   │
-│   └── realtime/
-│   │   ├── buffer.py
-│       └── predictor.py
-│
-├── dataset/
-│   ├── build_csv.py
-│   ├── extract_features.py
-│   ├── baseline.py
-│   ├── merge_five.csv
-│   ├── merge_five_enhanced.csv
-│   └── merge_five_enhanced_new.csv
-│
-└── templates
-    └── index.html
+.
+├── models
+│   └── heuristic_model.pkl     # Model file
+├── scripts/                    # Entry points
+├── src
+│   ├── dataset/                # Dataset operations
+│   ├── features/               # Feature engineering
+│   ├── preprocessing/          # Preprocessing tools
+│   ├── realtime/               # Realtime prediciton
+│   ├── train/                  # Model training
+│   └── visualization/          # Figure generation scripts
+├── static
+│   ├── css/                    # Stylesheet
+│   └── js/                     # Frontend logic
+├── templates
+│   └── index.html              # Frontend structure
+├── .editorconfig
+├── .envrc
+├── .gitattributes
+├── .gitignore
+├── .prettierrc
+├── face_landmarker.task        # Face recognition model
+├── flake.lock
+├── flake.nix
+├── README.md
+└── requirements.txt            # Dependencies
 ```
+
+## License
+
+MIT License
+
+## Acknowledgement
+
+- [`MediaPipe`](https://github.com/google-ai-edge/mediapipe): Cross-platform, customizable ML solutions for live and streaming media.
+- [`Flask`](https://github.com/pallets/flask): The Python micro framework for building web applications.
+- [`scikit-learn`](https://github.com/scikit-learn/scikit-learn): machine learning in Python
+- [`pandas`](https://github.com/pandas-dev/pandas): Flexible and powerful data analysis / manipulation library for Python, providing labeled data structures similar to R data.frame objects, statistical functions, and much more
