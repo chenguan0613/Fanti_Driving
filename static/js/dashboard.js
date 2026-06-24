@@ -147,11 +147,16 @@ async function fetchSystemStatus() {
 }
 
 function setLastWarningThreshold() {
-  el = document.getElementById("last-warning-threshold");
-  if (!el) {
+  panel = document.getElementById("last-warning-threshold");
+  legend = document.getElementById("threshold-legend");
+  if (!panel) {
     return;
   }
-  el.innerHTML = `Last 90 seconds, warning threshold at ${thresholdValue}%`;
+  if (!legend) {
+    return;
+  }
+  panel.innerText = `Last 90 seconds, warning threshold at ${thresholdValue}%`;
+  legend.innerText = `${thresholdValue}% threshold`;
 }
 
 window.addEventListener("resize", drawRiskChart);
