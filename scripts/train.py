@@ -2,7 +2,7 @@ from src.train import HeuristicTrain
 
 
 def main():
-    PATH = "./data/dataset/enhanced_merged.csv"
+    PATH = "./data/dataset/enhanced.csv"
     # Using the dataset to train
     T = HeuristicTrain(PATH)
     T.run("models/heuristic_model.pkl")
