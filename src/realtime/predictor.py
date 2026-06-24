@@ -57,6 +57,7 @@ class FatiguePredictor:
 
         self.norm_history = deque(maxlen=15)
         self.yawn_consecutive = 0
+        self._cached_reason = ""
 
     def process_frame(self, frame):
         frame = cv2.flip(frame, 1)
@@ -166,15 +167,24 @@ class FatiguePredictor:
                 self.yawn_consecutive = 0
 
             if self.fatigue_prob > 70.0:
+                if self.current_status != "FATIGUE WARNING":
+                    self.status_reason = self._build_warning_reason(row)
+                    self._cached_reason = self.status_reason
+                else:
+                    self.status_reason = self._cached_reason
                 self.current_status = "FATIGUE WARNING"
-                self.status_reason = self._build_warning_reason(row)
             elif self.yawn_consecutive >= 45:
+                if self.current_status != "FATIGUE WARNING":
+                    self.status_reason = (
+                        "Yawning detected: mouth was kept wide open for too long."
+                    )
+                    self._cached_reason = self.status_reason
+                else:
+                    self.status_reason = self._cached_reason
                 self.current_status = "FATIGUE WARNING"
-                self.status_reason = (
-                    "Yawning detected: mouth was kept wide open for too long."
-                )
             else:
                 self.current_status = "Safe"
+                self._cached_reason = ""
                 self.status_reason = "Driver behavior is within the normal baseline"
 
         except Exception as e:
