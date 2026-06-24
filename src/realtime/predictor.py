@@ -149,7 +149,26 @@ class FatiguePredictor:
             else:
                 self.yawn_consecutive = 0
 
-            if self.fatigue_prob > 70.0:
+            # Check for clear explainable reasons
+            eye_score = self.perclos
+            blink_rate = row.blink_rate
+            pitch_score = row.pitch_velocity
+            print(f"pitch score: {pitch_score}")
+            face_score = row.face_missing_ratio
+
+            eye_reason_threshold = 0.20
+            blink_rate_reason_threshold = 0.50
+            head_reason_threshold = 2.0
+            face_reason_threshold = 0.25
+
+            has_clear_reason = (
+                eye_score >= eye_reason_threshold
+                or blink_rate >= blink_rate_reason_threshold
+                or face_score >= face_reason_threshold
+                or pitch_score >= head_reason_threshold
+            )
+
+            if self.fatigue_prob > 70.0 and has_clear_reason:
                 self.current_status = "FATIGUE WARNING"
                 self.status_reason = self._build_warning_reason(row)
             elif self.yawn_consecutive >= 45:
