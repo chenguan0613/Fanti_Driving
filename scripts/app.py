@@ -7,7 +7,7 @@ MODEL_PATH = "./models/heuristic_model.pkl"
 app = Flask(__name__, template_folder="../templates", static_folder="../static")
 predictor = FatiguePredictor(
     model_path=MODEL_PATH,
-    window_size=150,
+    window_size=75,
 )
 
 current_system_state = {

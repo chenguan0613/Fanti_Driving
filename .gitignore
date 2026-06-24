@@ -218,4 +218,5 @@ __marimo__/
 
 *.csv
 data/
-models/
+models/*
+!models/heuristic_model.pkl

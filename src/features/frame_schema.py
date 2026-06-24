@@ -124,6 +124,28 @@ ENHANCED_COLS = [
     "fatigue_index",
 ]
 
+# Features without cleaning
+# RAW_FEATURES = [
+#     "perclos",
+#     "blink_rate",
+#     "ear_mean",
+#     "ear_std",
+#     "ear_min",
+#     "mar_mean",
+#     "mar_std",
+#     "mar_max",
+#     "pitch_mean",
+#     "pitch_std",
+#     "gaze_x_mean",
+#     "gaze_y_mean",
+#     "ear_mean_norm",
+#     "mar_max_norm",
+#     "pitch_std_norm",
+#     "ear_velocity",
+#     "pitch_velocity",
+#     "fatigue_index",
+# ]
+
 # Features used for training
 GOLDEN_FEATURES = [
     "ear_std",

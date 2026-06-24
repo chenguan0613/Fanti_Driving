@@ -13,20 +13,20 @@ from src.features import WindowAggregator, FeatureRow, NORM_COLS
 
 class FatiguePredictor:
     def __init__(
-        # self, model_path="models/fatigue_model.pkl", task_path="face_landmarker.task"
         self,
         model_path="models/heuristic_model.pkl",
         task_path="face_landmarker.task",
-        window_size=150,
+        window_size=150,  # 15 second with 10 fps
     ):
         self.status_reason = ""
-        # Load the features
+        # Load the features and model
         loaded_obj = joblib.load(model_path)
         if isinstance(loaded_obj, dict) and "model" in loaded_obj:
             self.model = loaded_obj["model"]
         else:
             self.model = loaded_obj
 
+        # Dynamically extract the feature list that the model relies on during training.
         if isinstance(loaded_obj, dict) and "feature_names" in loaded_obj:
             self.active_features = list(loaded_obj["feature_names"])
             print(
@@ -50,12 +50,14 @@ class FatiguePredictor:
         self.fps = 0
         self.prev_time = 0
 
+        # Baseline calibration related variables
         self.is_baseline_ready = False
         self.baseline_history = []
         self.baseline_stats = {}
 
         self.norm_history = deque(maxlen=15)
         self.yawn_consecutive = 0
+        self._cached_reason = ""
 
     def process_frame(self, frame):
         frame = cv2.flip(frame, 1)
@@ -92,10 +94,28 @@ class FatiguePredictor:
                 self.baseline_history.append(asdict(row))
                 self.current_status = "Calibrating"
                 self.status_reason = "Building personal baseline from current driver"
+
                 if len(self.baseline_history) >= 150:
                     df_base = pd.DataFrame(self.baseline_history)
                     for feat in NORM_COLS:
-                        self.baseline_stats[feat] = df_base[feat].mean()
+                        if feat in df_base.columns:
+                            mean_val = df_base[feat].mean()
+                            self.baseline_stats[feat] = (
+                                float(mean_val) if pd.notna(mean_val) else 0.0
+                            )
+                        else:
+                            self.baseline_stats[feat] = 0.0
+
+                    self.baseline_stats["mar_max"] = max(
+                        self.baseline_stats.get("mar_max", 0.0), 0.25
+                    )
+                    self.baseline_stats["mar_mean"] = max(
+                        self.baseline_stats.get("mar_mean", 0.0), 0.08
+                    )
+                    self.baseline_stats["pitch_std"] = max(
+                        self.baseline_stats.get("pitch_std", 0.0), 0.02
+                    )
+
                     self.is_baseline_ready = True
                     print(
                         "\nPersonal baseline calibration complete. Real-time monitoring now in progress!\n"
@@ -103,18 +123,16 @@ class FatiguePredictor:
                 return
 
             # Phase 2: calculate the enhanced features
-            for feat in [
-                "ear_mean",
-                "pitch_std",
-            ]:
-                base_val = self.baseline_stats[feat]
-                curr_val = getattr(row, feat)
+            for feat in ["ear_mean", "pitch_std"]:
+                base_val = self.baseline_stats.get(feat, 0.0)
+                curr_val = getattr(row, feat, 0.0)
                 setattr(row, f"{feat}_norm", (curr_val - base_val) / (base_val + 1e-6))
 
-            row.mar_mean_norm = row.mar_mean - self.baseline_stats["mar_mean"]
+            row.mar_mean_norm = max(
+                row.mar_mean - self.baseline_stats.get("mar_mean", 0.08), 0.0
+            )
             row.mar_max_norm = max(
-                row.mar_max - self.baseline_stats["mar_max"],
-                self.baseline_stats["mar_max"],
+                row.mar_max - self.baseline_stats.get("mar_max", 0.25), 0.0
             )
 
             curr_ear_norm = row.ear_mean_norm
@@ -143,71 +161,139 @@ class FatiguePredictor:
                 prob = 1.0 / (1.0 + np.exp(-decision))
                 self.fatigue_prob = round(prob * 100, 1)
 
-            # Yaun heuristic: sustained elevated mean MAR over ~1.5 seconds
             if row.mar_mean_norm > 0.12:
                 self.yawn_consecutive += 1
             else:
                 self.yawn_consecutive = 0
 
             if self.fatigue_prob > 70.0:
+                if self.current_status != "FATIGUE WARNING":
+                    self.status_reason = self._build_warning_reason(row)
+                    self._cached_reason = self.status_reason
+                else:
+                    self.status_reason = self._cached_reason
                 self.current_status = "FATIGUE WARNING"
-                self.status_reason = self._build_warning_reason(row)
             elif self.yawn_consecutive >= 45:
+                if self.current_status != "FATIGUE WARNING":
+                    self.status_reason = (
+                        "Yawning detected: mouth was kept wide open for too long."
+                    )
+                    self._cached_reason = self.status_reason
+                else:
+                    self.status_reason = self._cached_reason
                 self.current_status = "FATIGUE WARNING"
-                self.status_reason = (
-                    "Yawning detected: mouth opening well above personal baseline"
-                )
             else:
                 self.current_status = "Safe"
+                self._cached_reason = ""
                 self.status_reason = "Driver behavior is within the normal baseline"
 
         except Exception as e:
-            print(f"\n[ERROR] AI inference failed: {str(e)}")
-            traceback.print_exc()
-            print("--------------------------------------------------\n")
+            if self.current_status != "Error: Check Terminal":
+                print(f"\n[ERROR] AI inference failed: {str(e)}")
+                traceback.print_exc()
+                print("--------------------------------------------------\n")
             self.current_status = "Error: Check Terminal"
             self.status_reason = "Internal inference error; check terminal output"
 
     def _build_warning_reason(self, row: FeatureRow):
-        eye_score = self.perclos
-        blink_rate = row.blink_rate
-        mouth_score = max(row.mar_max_norm, 0.0)
-        pitch_score = max(row.pitch_std_norm, 0.0)
-        face_score = row.face_missing_ratio
+        try:
+            # Dynamically explore the global feature weights of the current AI model
+            global_importances = None
+            # If it's tree model, extract the feature_importances_
+            if hasattr(self.model, "feature_importances_"):
+                global_importances = self.model.feature_importances_
+            # If it's linear model, extract the absolute value of its coefficients
+            elif hasattr(self.model, "coef_"):
+                global_importances = np.abs(self.model.coef_[0])
 
-        # Explanation thresholds only. They do not change the AI warning decision.
-        eye_reason_threshold = 0.20
-        blink_rate_reason_threshold = 0.50
-        mouth_reason_threshold = 0.20
-        head_reason_threshold = 1.20
-        face_reason_threshold = 0.25
+            weight_dict = {}
+            if global_importances is not None and len(global_importances) == len(
+                self.active_features
+            ):
+                weight_dict = dict(zip(self.active_features, global_importances))
+            else:
+                weight_dict = {feat: 1.0 for feat in self.active_features}
+            # Physical Extremum Scaling Dictionary
+            SCALE_MAP = {
+                # eye features
+                "perclos": 1.0 / 0.15,
+                "blink_rate": 1.0 / 0.10,
+                "ear_std": 1.0 / 0.04,
+                "ear_min": 1.0 / 0.15,
+                "ear_mean_norm": 1.0 / 0.20,
+                "ear_velocity": 1.0 / 0.15,
+                "fatigue_index": 1.0 / 0.03,
+                "gaze_y_mean": 1.0 / 0.15,
+                # ear features
+                "mar_std": 1.0 / 0.08,
+                "mar_mean_norm": 1.0 / 0.15,
+                "mar_max_norm": 1.0 / 0.25,
+                # head features
+                "pitch_std_norm": 1.0 / 0.08,
+            }
 
-        reasons = []
+            contribution_scores = []
+            for feat in self.active_features:
+                curr_val = getattr(row, feat, 0.0)
+                weight = weight_dict.get(feat, 1.0)
+                scale = SCALE_MAP.get(feat, 1.0)
 
-        # Direct behavior cues are prioritized over head motion because yawning and eye closure
-        # can naturally cause small head movement, and driving vibration can affect head pose.
-        if mouth_score >= mouth_reason_threshold:
-            reasons.append(
-                "mouth opening increased clearly compared with personal baseline"
-            )
-        if eye_score >= eye_reason_threshold:
-            reasons.append(
-                "sustained eye closure increased during the monitoring window"
-            )
-        elif blink_rate >= blink_rate_reason_threshold:
-            reasons.append("frequent blinking detected during the monitoring window")
-        if face_score >= face_reason_threshold:
-            reasons.append("face detection was unstable during the analysis window")
+                if "norm" in feat or feat in [
+                    "perclos",
+                    "blink_rate",
+                    "fatigue_index",
+                    "ear_std",
+                    "mar_std",
+                    "ear_velocity",
+                ]:
+                    deviation = abs(curr_val)
+                else:
+                    base_val = self.baseline_stats.get(feat, 0.0)
+                    if base_val > 0.001:
+                        deviation = abs(curr_val - base_val) / base_val
+                    else:
+                        deviation = abs(curr_val)
 
-        if len(reasons) < 2 and pitch_score >= head_reason_threshold:
-            reasons.append("large head pitch movement compared with personal baseline")
+                local_impact = deviation * scale * weight
 
-        if not reasons:
-            reasons.append(
-                "AI warning was triggered by combined feature patterns; no single visible cue passed the explanation threshold"
-            )
+                if "pitch_std" in feat:
+                    local_impact = local_impact * 0.5
 
-        return "; ".join(reasons[:2])
+                contribution_scores.append((feat, local_impact))
+
+            contribution_scores.sort(key=lambda x: x[1], reverse=True)
+
+            FEATURE_TRANSLATION_MAP = {
+                "perclos": "Prolonged eye closure",
+                "blink_rate": "frequent blinking detected during the monitoring window",
+                "ear_std": "Erratic eyelid movement",
+                "ear_min": "sustained eye closure increased during the monitoring window",
+                "mar_std": "Erratic mouth movement",
+                "ear_mean_norm": "Decreased eye opening",
+                "mar_mean_norm": "Elevated average mouth opening",
+                "mar_max_norm": "mouth opening increased clearly compared with personal baseline",
+                "pitch_std_norm": "large head pitch movement compared with personal baseline",
+                "ear_velocity": "Abrupt eyelid closure",
+                "fatigue_index": "Critical eye fatigue index",
+                "gaze_y_mean": "Prolonged downward gaze",
+            }
+
+            reasons = []
+            for feat, score in contribution_scores:
+                if len(reasons) >= 2:
+                    break
+                if feat in FEATURE_TRANSLATION_MAP:
+                    reasons.append(FEATURE_TRANSLATION_MAP[feat])
+
+            if not reasons:
+                reasons.append(
+                    "AI warning was triggered by combined feature patterns; no single visible cue passed the explanation threshold"
+                )
+
+            return "; ".join(reasons)
+
+        except Exception as e:
+            return "AI multi-feature pattern optimization triggered warning"
 
     def _draw_hud(self, frame):
         display_frame = frame.copy()
@@ -237,6 +323,7 @@ class FatiguePredictor:
             )
         else:
             hud_color = (0, 255, 255)
+
         if self.current_status in ["Safe", "FATIGUE WARNING"]:
             cv2.putText(
                 display_frame,
@@ -256,6 +343,7 @@ class FatiguePredictor:
                 hud_color,
                 2,
             )
+
         cv2.putText(
             display_frame,
             f"FPS: {self.fps:.1f}",

@@ -6,6 +6,8 @@ from sklearn.metrics import classification_report, f1_score
 from src.features import GOLDEN_FEATURES
 from .model_config import MODEL_PARAMS
 
+# from src.features import RAW_FEATURES
+
 
 class HeuristicTrain:
     def __init__(self, dataset_path: str):
@@ -15,6 +17,7 @@ class HeuristicTrain:
     def run(self, output_path: str = "models/heuristic_model.pkl"):
         # Extract the features according to the GOLDEN_FEATURES
         X = self.df[GOLDEN_FEATURES].values
+        # X = self.df[RAW_FEATURES].values
         y = self.df["label"].values
         # Use subject_id to classify
         groups = self.df["subject_id"].values
@@ -58,5 +61,6 @@ class HeuristicTrain:
         joblib.dump(
             {"model": best_model, "feature_names": GOLDEN_FEATURES}, output_path
         )
+        # joblib.dump({"model": best_model, "feature_names": RAW_FEATURES}, output_path)
         print(f"\nThe Best Model: {best_name} (F1: {best_score:.4f})")
         print(f"Model has been packeted into: {output_path}")
