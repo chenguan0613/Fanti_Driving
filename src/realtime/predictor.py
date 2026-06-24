@@ -265,14 +265,14 @@ class FatiguePredictor:
 
             FEATURE_TRANSLATION_MAP = {
                 "perclos": "Prolonged eye closure",
-                "blink_rate": "Frequent blinking",
+                "blink_rate": "frequent blinking detected during the monitoring window",
                 "ear_std": "Erratic eyelid movement",
-                "ear_min": "Severe eye closure",
+                "ear_min": "sustained eye closure increased during the monitoring window",
                 "mar_std": "Erratic mouth movement",
                 "ear_mean_norm": "Decreased eye opening",
                 "mar_mean_norm": "Elevated average mouth opening",
-                "mar_max_norm": "Excessive mouth opening",
-                "pitch_std_norm": "Severe head nodding",
+                "mar_max_norm": "mouth opening increased clearly compared with personal baseline",
+                "pitch_std_norm": "large head pitch movement compared with personal baseline",
                 "ear_velocity": "Abrupt eyelid closure",
                 "fatigue_index": "Critical eye fatigue index",
                 "gaze_y_mean": "Prolonged downward gaze",
@@ -287,7 +287,7 @@ class FatiguePredictor:
 
             if not reasons:
                 reasons.append(
-                    "Abnormal joint fluctuations in facial multidimensional features"
+                    "AI warning was triggered by combined feature patterns; no single visible cue passed the explanation threshold"
                 )
 
             return "; ".join(reasons)
