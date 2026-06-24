@@ -147,6 +147,6 @@ class FeatureSelectionArena:
 
 
 if __name__ == "__main__":
-    ENHANCED_CSV = "src/dataset/features_enhanced.csv"
+    ENHANCED_CSV = "data/dataset/enhanced.csv"
     arena = FeatureSelectionArena(pop_size=20, n_iterations=15)
     arena.fight(ENHANCED_CSV)
