@@ -125,3 +125,14 @@ $env:PYTHONPATH = "."
 ├── README.md
 └── requirements.txt            # Dependencies
 ```
+
+## License
+
+MIT License
+
+## Acknowledgement
+
+- [`MediaPipe`](https://github.com/google-ai-edge/mediapipe): Cross-platform, customizable ML solutions for live and streaming media.
+- [`Flask`](https://github.com/pallets/flask): The Python micro framework for building web applications.
+- [`scikit-learn`](https://github.com/scikit-learn/scikit-learn): machine learning in Python
+- [`pandas`](https://github.com/pandas-dev/pandas): Flexible and powerful data analysis / manipulation library for Python, providing labeled data structures similar to R data.frame objects, statistical functions, and much more
