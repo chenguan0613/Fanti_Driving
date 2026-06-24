@@ -217,7 +217,7 @@ class FatiguePredictor:
             SCALE_MAP = {
                 # eye features
                 "perclos": 1.0 / 0.15,
-                "blink_rate": 1.0 / 0.50,
+                "blink_rate": 1.0 / 0.10,
                 "ear_std": 1.0 / 0.04,
                 "ear_min": 1.0 / 0.15,
                 "ear_mean_norm": 1.0 / 0.20,
@@ -229,7 +229,7 @@ class FatiguePredictor:
                 "mar_mean_norm": 1.0 / 0.15,
                 "mar_max_norm": 1.0 / 0.25,
                 # head features
-                "pitch_std_norm": 1.0 / 2.0,
+                "pitch_std_norm": 1.0 / 0.08,
             }
 
             contribution_scores = []
