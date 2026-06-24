@@ -11,13 +11,17 @@ warnings.filterwarnings("ignore")
 
 
 class FeatureSelectionArena:
+    # Compare GA and BPSO
     def __init__(self, pop_size=30, n_iterations=20):
+        # Population Size
         self.pop_size = pop_size
+        # Iteration Times
         self.n_iterations = n_iterations
 
     def _fitness(self, solution_mask, X_train, y_train, X_test, y_test):
         if np.sum(solution_mask) == 0:
             return 0.0
+        # Extract the selected feature subset column
         X_tr_sub = X_train[:, solution_mask == 1]
         X_te_sub = X_test[:, solution_mask == 1]
         # Rapid assessment using lightweight forests
@@ -81,7 +85,7 @@ class FeatureSelectionArena:
                     gbest_position = pbest_positions[i].copy()
             for i in range(self.pop_size):
                 r1, r2 = np.random.rand(), np.random.rand()
-                # PSO 核心速度公式
+                # PSO core formular
                 velocities[i] = (
                     w * velocities[i]
                     + c1 * r1 * (pbest_positions[i] - positions[i])
@@ -105,8 +109,10 @@ class FeatureSelectionArena:
         X_tr, X_te = X[train_idx], X[test_idx]
         y_tr, y_te = y[train_idx], y[test_idx]
 
-        print(f"总候选特征维度: {n_features}")
-        print(f"迭代参数: 种群 {self.pop_size} | 迭代 {self.n_iterations} 代\n")
+        print(f"All features dimension: {n_features}")
+        print(
+            f"Iteration parameters: population {self.pop_size} | iteration {self.n_iterations} \n"
+        )
 
         # GA
         t0 = time.time()
@@ -141,6 +147,6 @@ class FeatureSelectionArena:
 
 
 if __name__ == "__main__":
-    ENHANCED_CSV = "src/dataset/features_enhanced.csv"
+    ENHANCED_CSV = "data/dataset/enhanced.csv"
     arena = FeatureSelectionArena(pop_size=20, n_iterations=15)
     arena.fight(ENHANCED_CSV)

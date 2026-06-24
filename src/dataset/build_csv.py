@@ -22,7 +22,10 @@ class CSVBuilder:
 
     def _get_state(self, filename: str) -> int:
         stem = Path(filename).stem
-        return 0 if stem in ("0", "5") else 1
+        if stem == "0":
+            return 0
+        elif stem == "10":
+            return 1
 
     def _extract_zip_if_needed(self, zip_path: Path) -> Path | None:
         extract_dir = zip_path.with_suffix("")
@@ -53,6 +56,8 @@ class CSVBuilder:
                     continue
                 for video_file in sorted(subj_dir.iterdir()):
                     if not video_file.is_file():
+                        continue
+                    if video_file.stem == "5":
                         continue
                     rel_path = str(video_file)
                     state = self._get_state(video_file.name)

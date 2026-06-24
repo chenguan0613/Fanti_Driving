@@ -10,8 +10,16 @@ predictor = FatiguePredictor(
     window_size=150,
 )
 
+current_system_state = {
+    "status": "Initializing",
+    "fatigue_prob": 0.0,
+    "perclos": 0.0,
+    "reason": "Waiting for monitoring data",
+}
+
 
 def generate_frames():
+    global current_system_state
     cap = cv2.VideoCapture(0)
 
     if not cap.isOpened():
@@ -23,7 +31,14 @@ def generate_frames():
         if not success:
             break
 
-        annotated_frame, _, _ = predictor.process_frame(frame)
+        annotated_frame, status, prob = predictor.process_frame(frame)
+        current_system_state = {
+            "status": predictor.current_status,
+            "fatigue_prob": predictor.fatigue_prob,
+            "perclos": round(predictor.perclos, 2),
+            "reason": predictor.status_reason,
+        }
+
         ret, buffer = cv2.imencode(".jpg", annotated_frame)
         if not ret:
             continue
@@ -50,14 +65,7 @@ def video_feed():
 
 @app.route("/api/status")
 def get_status():
-    return jsonify(
-        {
-            "status": predictor.current_status,
-            "fatigue_prob": predictor.fatigue_prob,
-            "perclos": round(predictor.perclos, 2),
-            "reason": predictor.status_reason,
-        }
-    )
+    return jsonify(current_system_state)
 
 
 if __name__ == "__main__":

@@ -14,6 +14,7 @@ MODEL_PARAMS = {
             n_jobs=-1,
         ),
         {
+            #
             "n_estimators": [500, 800],
             "max_depth": [20, 25],
             "min_samples_leaf": [2, 5],

@@ -4,13 +4,14 @@ from src.dataset import FeatureExtractor, FeatureBaseline
 
 def main():
     # `DATASET_LIST_PATH` can be obtained from `build_csv.py`
-    DATASET_LIST_PATH = "src/dataset/dataset.csv"
-    RAW_FEATURE_PATH = "./training_features.csv"
-    ENHANCED_FEATURE_PATH = "./enhanced.csv"
-    WORKDERS = cpu_count()
+    DATASET_LIST_PATH = "./data/dataset/dataset.csv"
+    RAW_FEATURE_PATH = "./data/dataset/training_features.csv"
+    ENHANCED_FEATURE_PATH = "./data/dataset/enhanced.csv"
+    # WORKDERS = cpu_count()
+    WORKDERS = 24
 
     fe = FeatureExtractor(
-        window_stride=30,
+        window_stride=75,
         target_fps=30,
         window_size=150,
     )
