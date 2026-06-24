@@ -83,6 +83,6 @@ class ModelEvaluator:
 
 
 if __name__ == "__main__":
-    path = "./data/dataset/enhanced_merged.csv"
+    path = "./data/dataset/enhanced.csv"
     evaluator = ModelEvaluator(path)
     evaluator.run_evaluation(GOLDEN_FEATURES)
