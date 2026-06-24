@@ -127,13 +127,15 @@ ENHANCED_COLS = [
 # Features used for training
 GOLDEN_FEATURES = [
     "ear_std",
-    "mar_mean",
-    "mar_max",
-    "pitch_std",
+    "ear_min",
+    "mar_std",
     "gaze_y_mean",
     "ear_mean_norm",
-    "mar_max_norm",
+    "mar_mean_norm",
+    "pitch_std_norm",
+    "ear_velocity",
     "fatigue_index",
+    "mar_max_norm",
     "perclos",
     "blink_rate",
 ]
