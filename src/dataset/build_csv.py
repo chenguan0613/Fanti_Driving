@@ -21,6 +21,8 @@ class CSVBuilder:
         self.OUTPUT_CSV = Path(output_csv)
 
     def _get_state(self, filename: str) -> int:
+        # file named "0" label it as "0"
+        # file named "10" label it as "1"
         stem = Path(filename).stem
         if stem == "0":
             return 0
@@ -57,6 +59,7 @@ class CSVBuilder:
                 for video_file in sorted(subj_dir.iterdir()):
                     if not video_file.is_file():
                         continue
+                    # Exclude the unused video (named "5")
                     if video_file.stem == "5":
                         continue
                     rel_path = str(video_file)
