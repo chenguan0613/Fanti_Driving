@@ -1,12 +1,27 @@
+import os
+import sys
 import cv2
 from flask import Flask, render_template, Response, jsonify
 from src.realtime import FatiguePredictor
 
-MODEL_PATH = "./models/heuristic_model.pkl"
 
-app = Flask(__name__, template_folder="../templates", static_folder="../static")
+def get_resource_path(relative_path):
+    if getattr(sys, "frozen", False) and hasattr(sys, "_MEIPASS"):
+        return os.path.join(sys._MEIPASS, relative_path)
+    return os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", relative_path)
+
+
+MODEL_PATH = get_resource_path("models/heuristic_model.pkl")
+TASK_PATH = get_resource_path("face_landmarker.task")
+
+app = Flask(
+    __name__,
+    template_folder=get_resource_path("templates"),
+    static_folder=get_resource_path("static"),
+)
 predictor = FatiguePredictor(
     model_path=MODEL_PATH,
+    task_path=TASK_PATH,
     window_size=75,
 )
 
