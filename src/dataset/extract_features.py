@@ -13,13 +13,14 @@ def _process_chunk(rows, window_stride, target_fps, window_size, model_path):
     results = []
     try:
         for row in rows:
+            # Parse the metadata in the basic video index table
             video_id = row["video_id"]
             video_path = row["video_path"]
             state_label = row["state"]
             subject_label = row.get("subject_id", f"subject_{video_id}")
 
             print(f"[START] {video_id}")
-
+            # Create the sliding window
             loader = VideoLoader(video_path, target_fps=target_fps)
             window_buffer = SlidingWindowBuffer(window_size=window_size)
 
@@ -27,17 +28,20 @@ def _process_chunk(rows, window_stride, target_fps, window_size, model_path):
             frame_counter = 0
 
             try:
+                # Load the video frame by frame
                 for _, timestamp, frame in loader.frame():
                     feature = extractor.extract(frame, timestamp=timestamp)
                     window_buffer.push(feature)
-
+                    # If the sliding window is full, start analyzing
                     if window_buffer.is_ready():
                         if frame_counter % window_stride == 0:
+                            # Calculate macro characteristics
                             stats = WindowAggregator.aggregate(
                                 window_buffer.get_window()
                             )
 
                             if stats and stats.face_missing_ratio < 0.50:
+                                # Convert the object into one-dimensional structured data rows
                                 row = FeatureRow.from_window(
                                     stats, video_id, subject_label, state_label
                                 )
