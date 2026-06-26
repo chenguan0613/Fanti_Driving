@@ -1,5 +1,9 @@
 # Fanti Driving
 
+## Installation
+
+Pre-built binary can be installed from [GitHub Release](https://github.com/chenguan0613/Fanti_Driving/releases/latest).
+
 ## Setup Environment
 
 0. Requirements:
@@ -82,7 +86,7 @@ $env:PYTHONPATH = "."
    python scripts/train.py
    ```
 
-3. The model can be found in `models/fatigue_model.pkl`
+3. The model can be found in `models/heuristic_model.pkl`
 
 ### Run the Application
 
